@@ -576,8 +576,19 @@ function renderIndicador(ind) {
 
 function renderInfoCard(info) {
   const fmt = v => {
-    if (!v) return '—';
-    const n = parseFloat(String(v).replace(/[^0-9.]/g,''));
+    if (!v || v === '—') return '—';
+    // Manejar notación científica (ej: 1.17e9), puntos de miles, comas decimales
+    let s = String(v).trim();
+    // Si viene en notación científica
+    if (s.toLowerCase().includes('e')) {
+      const n = parseFloat(s);
+      return isNaN(n) ? s : '$ ' + Math.round(n).toLocaleString('es-CO');
+    }
+    // Remover todo excepto dígitos, puntos y comas
+    // Detectar si la coma es separador decimal (ej: 1.172.875,49) o miles
+    // En Colombia los puntos son miles y la coma es decimal
+    s = s.replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.]/g, '');
+    const n = parseFloat(s);
     return isNaN(n) ? v : '$ ' + Math.round(n).toLocaleString('es-CO');
   };
   return `<div class="info-card">
