@@ -328,11 +328,11 @@ function parseCSV(text) {
   const lines = text.split('\n').filter(l => l.trim());
   if (lines.length < 2) throw new Error('El archivo CSV está vacío o no tiene datos');
 
-  // Detectar fila de encabezado (la que contiene NUMERO CONTRATO o PRESTADOR)
+  // Detectar fila de encabezado automáticamente (busca en las primeras 5 filas)
   let headerIdx = 0;
-  for (let i = 0; i < Math.min(3, lines.length); i++) {
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
     const up = lines[i].toUpperCase();
-    if (up.includes('PRESTADOR') || up.includes('CONTRATO')) { headerIdx = i; break; }
+    if (up.includes('PRESTADOR') && up.includes('CONTRATO')) { headerIdx = i; break; }
   }
 
   const headers = parseCSVLine(lines[headerIdx]).map(h =>
