@@ -230,6 +230,10 @@
         <select id="sel-t" onchange="renderContent()"></select>
       </div>
       <div>
+        <span class="flabel">📅 Trimestre evaluado</span>
+        <select id="sel-tr" onchange="renderContent()"></select>
+      </div>
+      <div>
         <span class="flabel">📍 Departamento</span>
         <select id="sel-d" onchange="renderContent()"></select>
       </div>
@@ -394,13 +398,17 @@ function parseCSV(text) {
     const prestador = (row[C.prestador] || '').trim();
     if (!contrato || !prestador) continue;
 
+    const trimestre = (row[C.trimestre] || '').trim();
+    const claveContrato = contrato + '|||' + trimestre;
+
     if (!newData[prestador]) newData[prestador] = {};
-    if (!newData[prestador][contrato]) {
-      newData[prestador][contrato] = {
+    if (!newData[prestador][claveContrato]) {
+      newData[prestador][claveContrato] = {
+        contrato: contrato,
         dept: row[C.dept] || '—',
         mun: row[C.mun] || '—',
         tipo: row[C.tipo] || '—',
-        trimestre: row[C.trimestre] || '—',
+        trimestre: trimestre || '—',
         valor: parseValor(row[C.valor]),
         inicio: row[C.inicio] || '—',
         fin: row[C.fin] || '—',
@@ -412,7 +420,7 @@ function parseCSV(text) {
 
     const nombre = (row[C.indicador] || '').trim();
     if (nombre) {
-      newData[prestador][contrato].indicadores.push({
+      newData[prestador][claveContrato].indicadores.push({
         nombre,
         li: row[C.li] ?? null,
         ls: row[C.ls] ?? null,
@@ -451,7 +459,11 @@ function parseCSVLine(line) {
 function buildIndexes() {
   contratoToPrestador = {};
   Object.entries(DATA).forEach(([p, cs]) => {
-    Object.keys(cs).forEach(c => contratoToPrestador[c] = p);
+    Object.keys(cs).forEach(clave => {
+      const cnum = clave.split('|||')[0];
+      if (!contratoToPrestador[cnum]) contratoToPrestador[cnum] = [];
+      if (!contratoToPrestador[cnum].includes(p)) contratoToPrestador[cnum].push(p);
+    });
   });
 }
 
@@ -459,14 +471,16 @@ function initUI() {
   const prestadores = Object.keys(DATA).sort();
   const allTipos = new Set();
   const allDepts = new Set();
+  const allTrimestres = new Set();
   const allC = {};
   let totalInd = 0, totalDesc = 0;
 
   prestadores.forEach(p => {
-    Object.entries(DATA[p]).forEach(([c, info]) => {
+    Object.entries(DATA[p]).forEach(([clave, info]) => {
       allTipos.add(info.tipo);
       allDepts.add(info.dept);
-      allC[c] = true;
+      allTrimestres.add(info.trimestre);
+      allC[clave.split('|||')[0]] = true;
       totalInd += info.indicadores.length;
       info.indicadores.forEach(i => { if (ajClass(i.ajuste) === 'desc') totalDesc++; });
     });
@@ -483,14 +497,19 @@ function initUI() {
   });
   if (curP) selP.value = curP;
 
-  // Contratos
+  // Contratos — mostrar número de contrato sin el trimestre
   const selC = document.getElementById('sel-c');
   const curC = selC.value;
   selC.innerHTML = '<option value="">— Todos los contratos —</option>';
-  (curP && DATA[curP] ? Object.keys(DATA[curP]) : Object.keys(allC)).sort().forEach(c => {
+  const contractNums = new Set();
+  if (curP && DATA[curP]) {
+    Object.keys(DATA[curP]).forEach(clave => contractNums.add(clave.split('|||')[0]));
+  } else {
+    Object.keys(allC).forEach(c => contractNums.add(c));
+  }
+  [...contractNums].sort().forEach(c => {
     const o = document.createElement('option');
-    o.value = c;
-    o.textContent = curP && DATA[curP] ? c + ' · ' + DATA[curP][c].tipo : c;
+    o.value = c; o.textContent = c;
     selC.appendChild(o);
   });
   if (curC) selC.value = curC;
@@ -504,6 +523,16 @@ function initUI() {
     o.value = t; o.textContent = t; selT.appendChild(o);
   });
   if (curT) selT.value = curT;
+
+  // Trimestres
+  const selTr = document.getElementById('sel-tr');
+  const curTr = selTr.value;
+  selTr.innerHTML = '<option value="">— Todos —</option>';
+  [...allTrimestres].sort().forEach(tr => {
+    const o = document.createElement('option');
+    o.value = tr; o.textContent = tr; selTr.appendChild(o);
+  });
+  if (curTr) selTr.value = curTr;
 
   // Departamentos
   const selD = document.getElementById('sel-d');
@@ -543,9 +572,10 @@ function onPrestadorChange() {
   const selC = document.getElementById('sel-c');
   selC.innerHTML = '<option value="">— Todos los contratos —</option>';
   if (p && DATA[p]) {
-    Object.keys(DATA[p]).sort().forEach(c => {
+    const nums = new Set(Object.keys(DATA[p]).map(k => k.split('|||')[0]));
+    [...nums].sort().forEach(c => {
       const o = document.createElement('option');
-      o.value = c; o.textContent = c + ' · ' + DATA[p][c].tipo;
+      o.value = c; o.textContent = c;
       selC.appendChild(o);
     });
   } else {
@@ -562,6 +592,7 @@ function resetFilters() {
   document.getElementById('sel-p').value = '';
   document.getElementById('sel-t').value = '';
   document.getElementById('sel-d').value = '';
+  document.getElementById('sel-tr').value = '';
   onPrestadorChange();
   showEmptyState();
   // Restaurar stats globales
@@ -622,30 +653,43 @@ function renderContent() {
   const dept = document.getElementById('sel-d').value;
   const content = document.getElementById('content');
 
-  if (!p && !c && !tipo && !dept) { showEmptyState(); return; }
+  if (!p && !c && !tipo && !dept && !document.getElementById('sel-tr').value) { showEmptyState(); return; }
 
   let sections = [];
 
+  const trimestre = document.getElementById('sel-tr').value;
+
   if (p && DATA[p]) {
-    Object.entries(DATA[p]).forEach(([cnum, info]) => {
+    Object.entries(DATA[p]).forEach(([clave, info]) => {
+      const cnum = clave.split('|||')[0];
       if (c && cnum !== c) return;
       if (tipo && info.tipo !== tipo) return;
       if (dept && info.dept !== dept) return;
+      if (trimestre && info.trimestre !== trimestre) return;
       sections.push({ prestador: p, cnum, info });
     });
   } else if (c) {
-    const prest = contratoToPrestador[c];
-    if (prest && DATA[prest]?.[c]) {
-      const info = DATA[prest][c];
-      if ((!tipo || info.tipo === tipo) && (!dept || info.dept === dept))
-        sections.push({ prestador: prest, cnum: c, info });
-    }
+    const prests = contratoToPrestador[c] || [];
+    prests.forEach(prest => {
+      if (DATA[prest]) {
+        Object.entries(DATA[prest]).forEach(([clave, info]) => {
+          const cnum = clave.split('|||')[0];
+          if (cnum !== c) return;
+          if (tipo && info.tipo !== tipo) return;
+          if (dept && info.dept !== dept) return;
+          if (trimestre && info.trimestre !== trimestre) return;
+          sections.push({ prestador: prest, cnum, info });
+        });
+      }
+    });
   } else {
     let count = 0;
     outer: for (const [pname, cs] of Object.entries(DATA)) {
-      for (const [cnum, info] of Object.entries(cs)) {
+      for (const [clave, info] of Object.entries(cs)) {
+        const cnum = clave.split('|||')[0];
         if (tipo && info.tipo !== tipo) continue;
         if (dept && info.dept !== dept) continue;
+        if (trimestre && info.trimestre !== trimestre) continue;
         sections.push({ prestador: pname, cnum, info });
         if (++count >= 6) break outer;
       }
@@ -674,6 +718,7 @@ function renderContent() {
           <div class="cs-meta">
             <span>📍 ${info.mun}, ${info.dept}</span>
             <span>🗂️ ${info.tipo}</span>
+            <span>📅 ${info.trimestre}</span>
             <span>📊 ${info.indicadores.length} ind.</span>
             ${desc > 0 ? `<span style="color:var(--yellow)">⚠️ ${desc} con ajuste</span>` : ''}
           </div>
