@@ -166,7 +166,69 @@
     .sidebar { position: static; height: auto; }
     .indicators-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 0; background: var(--surface); }
+  .tab-btn { padding: 12px 24px; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; cursor: pointer; background: transparent; border: none; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── DASHBOARD CHARTS ── */
+  .dashboard { padding: 22px; }
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .dash-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 18px; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-card h3 { font-size: 11px; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .chart-card h3::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap.tall { height: 340px; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 16px 18px; }
+  .kpi .kv { font-size: 28px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--accent); line-height: 1; }
+  .kpi .kl { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+  .kpi .ks { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .kpi.warn .kv { color: var(--yellow); }
+  .kpi.good .kv { color: var(--green); }
+
+  /* ── RANKING TABLE ── */
+  .rank-table { width: 100%; border-collapse: collapse; }
+  .rank-table th { font-size: 10px; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  .rank-table td { font-size: 12px; padding: 9px 10px; border-bottom: 1px solid rgba(30,45,69,0.5); color: var(--text); }
+  .rank-table tr:hover td { background: rgba(0,212,255,0.03); }
+  .rank-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--accent); }
+  .rank-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .rank-bar { height: 6px; background: var(--yellow); border-radius: 3px; min-width: 4px; }
+  .rank-bar.green { background: var(--green); }
+
+  /* ── EXPORT BTN ── */
+  .export-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: all .2s; border: 1px solid rgba(0,212,255,0.3); background: rgba(0,212,255,0.05); color: var(--accent); }
+  .export-btn:hover { background: rgba(0,212,255,0.12); }
+  .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .dash-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .dash-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── PRINT ── */
+  @media print {
+    header, .sidebar, .tabs, .export-btn, #toast { display: none !important; }
+    .main { grid-template-columns: 1fr !important; }
+    .content, .dashboard { padding: 0 !important; }
+    .chart-card, .kpi, .info-card, .ic { break-inside: avoid; }
+    body { background: white !important; color: black !important; }
+    .kpi .kv { color: #0066cc !important; }
+    .chart-card { border: 1px solid #ccc !important; background: white !important; }
+  }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; }
+  }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -207,6 +269,10 @@
 
 <!-- APP -->
 <div id="app">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('indicadores')">📋 Indicadores</button>
+    <button class="tab-btn" onclick="switchTab('resumen')">📊 Resumen Ejecutivo</button>
+  </div>
   <div class="main">
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -252,14 +318,60 @@
       <div class="last-update" id="last-update"></div>
     </aside>
 
-    <!-- CONTENT -->
-    <main class="content" id="content">
-      <div class="empty-state">
-        <div class="ei">🔍</div>
-        <h3>Selecciona un prestador o contrato</h3>
-        <p>Usa los filtros del panel izquierdo para explorar los indicadores.</p>
+    <!-- CONTENT TABS -->
+    <div style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+      <!-- TAB: INDICADORES -->
+      <div class="tab-content active" id="tab-indicadores">
+        <main class="content" id="content">
+          <div class="empty-state">
+            <div class="ei">🔍</div>
+            <h3>Selecciona un prestador o contrato</h3>
+            <p>Usa los filtros del panel izquierdo para explorar los indicadores.</p>
+          </div>
+        </main>
       </div>
-    </main>
+      <!-- TAB: RESUMEN EJECUTIVO -->
+      <div class="tab-content" id="tab-resumen">
+        <div class="dashboard" id="dashboard">
+          <div class="dash-header">
+            <div>
+              <div class="dash-title">Resumen Ejecutivo</div>
+              <div class="dash-sub" id="dash-sub">Todos los prestadores · Todos los contratos</div>
+            </div>
+            <button class="export-btn" onclick="exportPDF()">🖨️ Exportar PDF</button>
+          </div>
+          <!-- KPIs -->
+          <div class="kpi-grid" id="kpi-grid"></div>
+          <!-- Charts row 1 -->
+          <div class="dash-grid">
+            <div class="chart-card">
+              <h3>Por Departamento</h3>
+              <div class="chart-wrap"><canvas id="chart-dept"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <h3>Por Tipo de Contrato</h3>
+              <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
+            </div>
+          </div>
+          <!-- Charts row 2 -->
+          <div class="dash-grid">
+            <div class="chart-card">
+              <h3>Indicadores con Ajuste vs Sin Ajuste</h3>
+              <div class="chart-wrap"><canvas id="chart-ajuste"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <h3>Por Trimestre Evaluado</h3>
+              <div class="chart-wrap"><canvas id="chart-trim"></canvas></div>
+            </div>
+          </div>
+          <!-- Ranking -->
+          <div class="chart-card full">
+            <h3>Ranking de Prestadores por Indicadores con Ajuste</h3>
+            <div id="ranking-table"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -763,6 +875,175 @@ function showToast(msg, type = '') {
 
 // ─── ARRANQUE ─────────────────────────────────────────────────────────────────
 loadData();
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+let activeTab = 'indicadores';
+let charts = {};
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='indicadores') || (i===1 && tab==='resumen'));
+  });
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'resumen') renderDashboard();
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function getFilteredSections() {
+  const p = document.getElementById('sel-p').value;
+  const c = document.getElementById('sel-c').value;
+  const tipo = document.getElementById('sel-t').value;
+  const dept = document.getElementById('sel-d').value;
+  const trimestre = document.getElementById('sel-tr').value;
+  let sections = [];
+
+  for (const [pname, cs] of Object.entries(DATA)) {
+    if (p && pname !== p) continue;
+    for (const [clave, info] of Object.entries(cs)) {
+      const cnum = clave.split('|||')[0];
+      if (c && cnum !== c) continue;
+      if (tipo && info.tipo !== tipo) continue;
+      if (dept && info.dept !== dept) continue;
+      if (trimestre && info.trimestre !== trimestre) continue;
+      sections.push({ prestador: pname, cnum, info });
+    }
+  }
+  return sections;
+}
+
+function renderDashboard() {
+  const sections = Object.keys(DATA).length ? getFilteredSections() : [];
+  // If no filters, show all
+  let allSections = sections;
+  if (!allSections.length && Object.keys(DATA).length) {
+    for (const [pname, cs] of Object.entries(DATA)) {
+      for (const [clave, info] of Object.entries(cs)) {
+        allSections.push({ prestador: pname, cnum: clave.split('|||')[0], info });
+      }
+    }
+  }
+
+  if (!allSections.length) return;
+
+  // Compute aggregates
+  const totalInd = allSections.reduce((s,x) => s + x.info.indicadores.length, 0);
+  const totalDesc = allSections.reduce((s,x) => s + x.info.indicadores.filter(i => ajClass(i.ajuste)==='desc').length, 0);
+  const totalContratos = new Set(allSections.map(x => x.cnum)).size;
+  const totalPrest = new Set(allSections.map(x => x.prestador)).size;
+  const pctDesc = totalInd ? Math.round(totalDesc/totalInd*100) : 0;
+
+  // Update subtitle
+  const p = document.getElementById('sel-p').value;
+  const d = document.getElementById('sel-d').value;
+  const tr = document.getElementById('sel-tr').value;
+  let sub = [];
+  if (p) sub.push(p); else sub.push(totalPrest + ' prestadores');
+  if (d) sub.push(d); else sub.push('Todos los departamentos');
+  if (tr) sub.push(tr);
+  document.getElementById('dash-sub').textContent = sub.join(' · ');
+
+  // KPIs
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi"><div class="kv">${totalPrest}</div><div class="kl">Prestadores</div></div>
+    <div class="kpi"><div class="kv">${totalContratos}</div><div class="kl">Contratos</div></div>
+    <div class="kpi warn"><div class="kv">${totalDesc}</div><div class="kl">Con Ajuste / Descuento</div><div class="ks">${pctDesc}% del total</div></div>
+    <div class="kpi good"><div class="kv">${(totalInd-totalDesc)}</div><div class="kl">Sin Ajuste / No Aplica</div><div class="ks">${100-pctDesc}% del total</div></div>
+  `;
+
+  // By dept
+  const byDept = {};
+  const byDeptDesc = {};
+  allSections.forEach(({info}) => {
+    const d = info.dept;
+    byDept[d] = (byDept[d]||0) + info.indicadores.length;
+    byDeptDesc[d] = (byDeptDesc[d]||0) + info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
+  });
+  const deptLabels = Object.keys(byDept).sort((a,b) => byDept[b]-byDept[a]).slice(0,10);
+  renderChart('chart-dept', 'bar', deptLabels,
+    [{ label:'Total', data: deptLabels.map(d=>byDept[d]), backgroundColor:'rgba(0,212,255,0.6)', borderColor:'rgba(0,212,255,1)', borderWidth:1 },
+     { label:'Con Ajuste', data: deptLabels.map(d=>byDeptDesc[d]||0), backgroundColor:'rgba(255,209,102,0.7)', borderColor:'rgba(255,209,102,1)', borderWidth:1 }],
+    { indexAxis:'y' });
+
+  // By tipo
+  const byTipo = {};
+  allSections.forEach(({info}) => { byTipo[info.tipo] = (byTipo[info.tipo]||0) + info.indicadores.length; });
+  const tipoLabels = Object.keys(byTipo).sort((a,b)=>byTipo[b]-byTipo[a]);
+  renderChart('chart-tipo', 'doughnut', tipoLabels,
+    [{ data: tipoLabels.map(t=>byTipo[t]), backgroundColor:['rgba(0,212,255,0.7)','rgba(0,229,160,0.7)','rgba(255,209,102,0.7)','rgba(255,77,109,0.7)','rgba(148,163,184,0.7)'], borderWidth:0 }]);
+
+  // Ajuste pie
+  renderChart('chart-ajuste', 'doughnut', ['Con Ajuste','Sin Ajuste'],
+    [{ data:[totalDesc, totalInd-totalDesc], backgroundColor:['rgba(255,209,102,0.8)','rgba(0,229,160,0.7)'], borderWidth:0 }]);
+
+  // By trimestre
+  const byTrim = {};
+  allSections.forEach(({info}) => { byTrim[info.trimestre] = (byTrim[info.trimestre]||0) + info.indicadores.length; });
+  const trimLabels = Object.keys(byTrim).sort();
+  renderChart('chart-trim', 'bar', trimLabels,
+    [{ label:'Indicadores', data: trimLabels.map(t=>byTrim[t]), backgroundColor:'rgba(0,229,160,0.6)', borderColor:'rgba(0,229,160,1)', borderWidth:1 }]);
+
+  // Ranking
+  const byPrest = {};
+  const byPrestTotal = {};
+  allSections.forEach(({prestador,info}) => {
+    byPrest[prestador] = (byPrest[prestador]||0) + info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
+    byPrestTotal[prestador] = (byPrestTotal[prestador]||0) + info.indicadores.length;
+  });
+  const sorted = Object.entries(byPrest).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const maxDesc = sorted[0]?.[1] || 1;
+
+  document.getElementById('ranking-table').innerHTML = `
+    <table class="rank-table">
+      <thead><tr><th>#</th><th>Prestador</th><th>Total Ind.</th><th>Con Ajuste</th><th>% Ajuste</th><th>Distribución</th></tr></thead>
+      <tbody>
+        ${sorted.map(([prest,desc],i) => {
+          const total = byPrestTotal[prest];
+          const pct = Math.round(desc/total*100);
+          const barW = Math.round(desc/maxDesc*120);
+          const sinAjW = Math.round((total-desc)/maxDesc*120);
+          return `<tr>
+            <td><span class="rank-num">${i+1}</span></td>
+            <td style="max-width:200px;font-size:11px">${prest}</td>
+            <td style="text-align:center">${total}</td>
+            <td style="text-align:center;color:var(--yellow);font-weight:700">${desc}</td>
+            <td style="text-align:center;color:${pct>50?'var(--red)':pct>25?'var(--yellow)':'var(--green)'};font-weight:700">${pct}%</td>
+            <td><div class="rank-bar-wrap">
+              <div class="rank-bar" style="width:${barW}px"></div>
+              <div class="rank-bar green" style="width:${sinAjW}px"></div>
+            </div></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderChart(id, type, labels, datasets, extraOpts={}) {
+  if (charts[id]) { charts[id].destroy(); }
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+        tooltip: { backgroundColor: '#1a2233', titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
+      },
+      scales: type === 'bar' ? {
+        x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: 'rgba(30,45,69,0.5)' } },
+        y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: 'rgba(30,45,69,0.5)' } }
+      } : {},
+      ...extraOpts
+    }
+  });
+}
+
+// ─── EXPORT PDF ───────────────────────────────────────────────────────────────
+function exportPDF() {
+  window.print();
+}
 </script>
 </body>
 </html>
