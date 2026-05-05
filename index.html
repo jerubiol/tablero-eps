@@ -388,41 +388,56 @@
       <!-- TAB: RESUMEN EJECUTIVO -->
       <div class="tab-content" id="tab-resumen">
         <div class="dashboard" id="dashboard">
-          <div class="dash-header">
-            <div>
-              <div class="dash-title">Resumen Ejecutivo</div>
-              <div class="dash-sub" id="dash-sub">Todos los prestadores · Todos los contratos</div>
-            </div>
-            <button class="export-btn" onclick="exportPDF()">🖨️ Exportar PDF</button>
+          <!-- FILTROS SUPERIORES -->
+          <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;">
+            <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;color:var(--accent);white-space:nowrap;">Filtros</span>
+            <select id="dash-sel-p" onchange="dashOnPrestadorChange()" style="flex:1;min-width:160px;max-width:220px"><option value="">— Prestador —</option></select>
+            <select id="dash-sel-c" onchange="renderDashboard()" style="flex:1;min-width:130px;max-width:180px"><option value="">— Contrato —</option></select>
+            <select id="dash-sel-d" onchange="renderDashboard()" style="flex:1;min-width:130px;max-width:180px"><option value="">— Departamento —</option></select>
+            <select id="dash-sel-tr" onchange="renderDashboard()" style="flex:1;min-width:140px;max-width:200px"><option value="">— Trimestre —</option></select>
+            <select id="dash-sel-t" onchange="renderDashboard()" style="flex:1;min-width:130px;max-width:180px"><option value="">— Tipo contrato —</option></select>
+            <button class="export-btn" onclick="exportPDF()">🖨️ PDF</button>
+            <button class="export-btn" onclick="['dash-sel-p','dash-sel-c','dash-sel-d','dash-sel-tr','dash-sel-t'].forEach(id=>document.getElementById(id).value='');renderDashboard();" style="color:var(--text-muted);border-color:var(--border);">↺</button>
           </div>
-          <!-- KPIs -->
-          <div class="kpi-grid" id="kpi-grid"></div>
-          <!-- Charts row 1 -->
-          <div class="dash-grid">
-            <div class="chart-card">
-              <h3>Por Departamento</h3>
-              <div class="chart-wrap"><canvas id="chart-dept"></canvas></div>
+
+          <div class="dashboard" id="dashboard">
+            <div class="dash-header">
+              <div>
+                <div class="dash-title">Resumen Ejecutivo Unificado</div>
+                <div class="dash-sub" id="dash-sub">Indicadores + Criterios · Todos los prestadores</div>
+              </div>
             </div>
-            <div class="chart-card">
-              <h3>Por Tipo de Contrato</h3>
-              <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
+            <!-- KPI fila 1 -->
+            <div class="kpi-grid" id="kpi-grid" style="grid-template-columns:repeat(4,1fr)"></div>
+            <!-- KPI fila 2 -->
+            <div class="kpi-grid" id="kpi-grid2" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px"></div>
+            <!-- Charts fila 1 -->
+            <div class="dash-grid">
+              <div class="chart-card">
+                <h3>Alertas por Departamento</h3>
+                <div class="chart-wrap tall"><canvas id="chart-dept"></canvas></div>
+              </div>
+              <div class="chart-card">
+                <h3>Por Trimestre Evaluado</h3>
+                <div class="chart-wrap tall"><canvas id="chart-trim"></canvas></div>
+              </div>
             </div>
-          </div>
-          <!-- Charts row 2 -->
-          <div class="dash-grid">
-            <div class="chart-card">
-              <h3>Indicadores con Ajuste vs Sin Ajuste</h3>
-              <div class="chart-wrap"><canvas id="chart-ajuste"></canvas></div>
+            <!-- Charts fila 2 -->
+            <div class="dash-grid">
+              <div class="chart-card">
+                <h3>Distribución Indicadores</h3>
+                <div class="chart-wrap"><canvas id="chart-ajuste"></canvas></div>
+              </div>
+              <div class="chart-card">
+                <h3>Distribución Criterios</h3>
+                <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
+              </div>
             </div>
-            <div class="chart-card">
-              <h3>Por Trimestre Evaluado</h3>
-              <div class="chart-wrap"><canvas id="chart-trim"></canvas></div>
+            <!-- Ranking -->
+            <div class="chart-card full">
+              <h3>Ranking Unificado por Prestador</h3>
+              <div id="ranking-table"></div>
             </div>
-          </div>
-          <!-- Ranking -->
-          <div class="chart-card full">
-            <h3>Ranking de Prestadores por Indicadores con Ajuste</h3>
-            <div id="ranking-table"></div>
           </div>
         </div>
       </div>
@@ -1235,133 +1250,228 @@ function switchTab(tab) {
   if (tab === 'criterios' && !crInitialized) loadCriteriosData();
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function getFilteredSections() {
-  const p = document.getElementById('sel-p').value;
-  const c = document.getElementById('sel-c').value;
-  const tipo = document.getElementById('sel-t').value;
-  const dept = document.getElementById('sel-d').value;
-  const trimestre = document.getElementById('sel-tr').value;
-  let sections = [];
+// ─── DASHBOARD UNIFICADO ─────────────────────────────────────────────────────
+function getDashFilters() {
+  return {
+    p:    document.getElementById('dash-sel-p').value,
+    c:    document.getElementById('dash-sel-c').value,
+    dept: document.getElementById('dash-sel-d').value,
+    tr:   document.getElementById('dash-sel-tr').value,
+    tipo: document.getElementById('dash-sel-t').value
+  };
+}
 
+function dashOnPrestadorChange() {
+  const p = document.getElementById('dash-sel-p').value;
+  const selC = document.getElementById('dash-sel-c');
+  selC.innerHTML = '<option value="">— Todos —</option>';
+  const nums = new Set();
+  if (p && DATA[p]) Object.keys(DATA[p]).forEach(k => nums.add(k.split('|||')[0]));
+  if (p && CRITERIOS_DATA[p]) Object.keys(CRITERIOS_DATA[p]).forEach(k => nums.add(k.split('|||')[0]));
+  if (!p) {
+    Object.values(DATA).forEach(cs => Object.keys(cs).forEach(k => nums.add(k.split('|||')[0])));
+    Object.values(CRITERIOS_DATA).forEach(cs => Object.keys(cs).forEach(k => nums.add(k.split('|||')[0])));
+  }
+  [...nums].sort().forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; selC.appendChild(o); });
+  renderDashboard();
+}
+
+function getFilteredSections() {
+  const {p,c,dept,tr,tipo} = getDashFilters();
+  const ind = [], crit = [];
   for (const [pname, cs] of Object.entries(DATA)) {
-    if (p && pname !== p) continue;
+    if (p && pname!==p) continue;
     for (const [clave, info] of Object.entries(cs)) {
       const cnum = clave.split('|||')[0];
-      if (c && cnum !== c) continue;
-      if (tipo && info.tipo !== tipo) continue;
-      if (dept && info.dept !== dept) continue;
-      if (trimestre && info.trimestre !== trimestre) continue;
-      sections.push({ prestador: pname, cnum, info });
+      if (c && cnum!==c) continue;
+      if (tipo && info.tipo!==tipo) continue;
+      if (dept && info.dept!==dept) continue;
+      if (tr && info.trimestre!==tr) continue;
+      ind.push({prestador:pname, cnum, info});
     }
   }
-  return sections;
+  for (const [pname, cs] of Object.entries(CRITERIOS_DATA)) {
+    if (p && pname!==p) continue;
+    for (const [clave, info] of Object.entries(cs)) {
+      const cnum = clave.split('|||')[0];
+      if (c && cnum!==c) continue;
+      if (tipo && info.tipo!==tipo) continue;
+      if (dept && info.dept!==dept) continue;
+      if (tr && info.trimestre!==tr) continue;
+      crit.push({prestador:pname, cnum, info});
+    }
+  }
+  return {ind, crit};
+}
+
+function initDashFilters() {
+  const allTipos=new Set(), allDepts=new Set(), allTrim=new Set(), allC=new Set(), allP=new Set();
+  Object.entries(DATA).forEach(([p,cs]) => { allP.add(p); Object.entries(cs).forEach(([k,i])=>{ allTipos.add(i.tipo); allDepts.add(i.dept); allTrim.add(i.trimestre); allC.add(k.split('|||')[0]); }); });
+  Object.entries(CRITERIOS_DATA).forEach(([p,cs]) => { allP.add(p); Object.entries(cs).forEach(([k,i])=>{ allTipos.add(i.tipo); allDepts.add(i.dept); allTrim.add(i.trimestre); allC.add(k.split('|||')[0]); }); });
+
+  const selP = document.getElementById('dash-sel-p');
+  if (selP.children.length<=1) {
+    [...allP].sort().forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; selP.appendChild(o); });
+  }
+  const selC = document.getElementById('dash-sel-c');
+  if (selC.children.length<=1) {
+    [...allC].sort().forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; selC.appendChild(o); });
+  }
+  const selD = document.getElementById('dash-sel-d');
+  if (selD.children.length<=1) {
+    [...allDepts].sort().forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; selD.appendChild(o); });
+  }
+  const selTr = document.getElementById('dash-sel-tr');
+  if (selTr.children.length<=1) {
+    [...allTrim].sort().forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; selTr.appendChild(o); });
+  }
+  const selT = document.getElementById('dash-sel-t');
+  if (selT.children.length<=1) {
+    [...allTipos].sort().forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; selT.appendChild(o); });
+  }
 }
 
 function renderDashboard() {
-  const sections = Object.keys(DATA).length ? getFilteredSections() : [];
-  // If no filters, show all
-  let allSections = sections;
-  if (!allSections.length && Object.keys(DATA).length) {
-    for (const [pname, cs] of Object.entries(DATA)) {
-      for (const [clave, info] of Object.entries(cs)) {
-        allSections.push({ prestador: pname, cnum: clave.split('|||')[0], info });
-      }
-    }
+  initDashFilters();
+  const {ind: indSec, crit: critSec} = getFilteredSections();
+
+  // Fallback: show all if no filter applied and both empty
+  let indAll = indSec, critAll = critSec;
+  if (!indAll.length && !critAll.length) {
+    Object.entries(DATA).forEach(([p,cs])=>Object.entries(cs).forEach(([k,i])=>indAll.push({prestador:p,cnum:k.split('|||')[0],info:i})));
+    Object.entries(CRITERIOS_DATA).forEach(([p,cs])=>Object.entries(cs).forEach(([k,i])=>critAll.push({prestador:p,cnum:k.split('|||')[0],info:i})));
   }
+  if (!indAll.length && !critAll.length) return;
 
-  if (!allSections.length) return;
-
-  // Compute aggregates
-  const totalInd = allSections.reduce((s,x) => s + x.info.indicadores.length, 0);
-  const totalDesc = allSections.reduce((s,x) => s + x.info.indicadores.filter(i => ajClass(i.ajuste)==='desc').length, 0);
-  const totalContratos = new Set(allSections.map(x => x.cnum)).size;
-  const totalPrest = new Set(allSections.map(x => x.prestador)).size;
+  // ── Compute aggregates ──
+  const totalInd   = indAll.reduce((s,x)=>s+x.info.indicadores.length,0);
+  const totalDesc  = indAll.reduce((s,x)=>s+x.info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length,0);
+  const totalCrit  = critAll.reduce((s,x)=>s+x.info.criterios.length,0);
+  const totalCumple    = critAll.reduce((s,x)=>s+x.info.criterios.filter(c=>c.calificacion==='CUMPLE').length,0);
+  const totalNoCumple  = critAll.reduce((s,x)=>s+x.info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length,0);
+  const totalMayor     = critAll.reduce((s,x)=>s+x.info.criterios.filter(c=>c.impacto==='MAYOR'&&c.calificacion==='NO CUMPLE').length,0);
+  const totalPrest  = new Set([...indAll.map(x=>x.prestador),...critAll.map(x=>x.prestador)]).size;
+  const totalContr  = new Set([...indAll.map(x=>x.cnum),...critAll.map(x=>x.cnum)]).size;
+  const totalDepts  = new Set([...indAll.map(x=>x.info.dept),...critAll.map(x=>x.info.dept)]).size;
   const pctDesc = totalInd ? Math.round(totalDesc/totalInd*100) : 0;
+  const pctNoCumple = totalCrit ? Math.round(totalNoCumple/totalCrit*100) : 0;
 
-  // Update subtitle
-  const p = document.getElementById('sel-p').value;
-  const d = document.getElementById('sel-d').value;
-  const tr = document.getElementById('sel-tr').value;
+  // Avg % cumplimiento from criterios
+  const pctVals = critAll.map(x=>x.info.pct_cumplimiento).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+  const avgPct = pctVals.length ? Math.round(pctVals.reduce((a,b)=>a+b,0)/pctVals.length*(pctVals[0]<=1?100:1)) : null;
+  const avgPctColor = avgPct===null?'var(--text-muted)':avgPct>=80?'var(--green)':avgPct>=60?'var(--yellow)':'var(--red)';
+
+  // ── Subtitle ──
+  const {p,dept,tr} = getDashFilters();
   let sub = [];
-  if (p) sub.push(p); else sub.push(totalPrest + ' prestadores');
-  if (d) sub.push(d); else sub.push('Todos los departamentos');
+  if (p) sub.push(p); else sub.push(totalPrest+' prestadores');
+  if (dept) sub.push(dept); else sub.push(totalDepts+' departamentos');
   if (tr) sub.push(tr);
   document.getElementById('dash-sub').textContent = sub.join(' · ');
 
-  // KPIs
-  document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi"><div class="kv">${totalPrest}</div><div class="kl">Prestadores</div></div>
-    <div class="kpi"><div class="kv">${totalContratos}</div><div class="kl">Contratos</div></div>
-    <div class="kpi warn"><div class="kv">${totalDesc}</div><div class="kl">Con Ajuste / Descuento</div><div class="ks">${pctDesc}% del total</div></div>
-    <div class="kpi good"><div class="kv">${(totalInd-totalDesc)}</div><div class="kl">Sin Ajuste / No Aplica</div><div class="ks">${100-pctDesc}% del total</div></div>
-  `;
+  // ── KPI row 1 ──
+  document.getElementById('kpi-grid').innerHTML =
+    kpiCard(totalPrest,'Prestadores','','var(--accent)') +
+    kpiCard(totalContr,'Contratos','','var(--accent)') +
+    kpiCard(totalDepts,'Departamentos','','var(--accent)') +
+    kpiCard(avgPct!==null?avgPct+'%':'—','% Cumpl. promedio','de criterios',avgPctColor);
 
-  // By dept
-  const byDept = {};
-  const byDeptDesc = {};
-  allSections.forEach(({info}) => {
-    const d = info.dept;
-    byDept[d] = (byDept[d]||0) + info.indicadores.length;
-    byDeptDesc[d] = (byDeptDesc[d]||0) + info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
+  // ── KPI row 2 ──
+  document.getElementById('kpi-grid2').innerHTML =
+    kpiCard2(totalInd,'Indicadores','#378ADD') +
+    kpiCard2(totalDesc,'Con ajuste / descuento','var(--yellow)', totalInd?Math.round(totalDesc/totalInd*100)+'% del total':'') +
+    kpiCard2(totalCrit,'Criterios evaluados','#1D9E75') +
+    kpiCard2(totalNoCumple,'No cumplen criterios','var(--red)', totalCrit?Math.round(totalNoCumple/totalCrit*100)+'% del total':'') +
+    kpiCard2(totalCumple,'Cumplen criterios','var(--green)', totalCrit?Math.round(totalCumple/totalCrit*100)+'% del total':'') +
+    kpiCard2(totalMayor,'Impacto MAYOR','var(--red)','criterios no cumplidos');
+
+  // ── Chart: por departamento (indicadores + criterios no cumplen) ──
+  const byDeptInd={}, byDeptDesc={}, byDeptCrit={}, byDeptNC={};
+  indAll.forEach(({info})=>{
+    const d=info.dept;
+    byDeptInd[d]=(byDeptInd[d]||0)+info.indicadores.length;
+    byDeptDesc[d]=(byDeptDesc[d]||0)+info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
   });
-  const deptLabels = Object.keys(byDept).sort((a,b) => byDept[b]-byDept[a]).slice(0,10);
-  renderChart('chart-dept', 'bar', deptLabels,
-    [{ label:'Total', data: deptLabels.map(d=>byDept[d]), backgroundColor:'rgba(0,212,255,0.6)', borderColor:'rgba(0,212,255,1)', borderWidth:1 },
-     { label:'Con Ajuste', data: deptLabels.map(d=>byDeptDesc[d]||0), backgroundColor:'rgba(255,209,102,0.7)', borderColor:'rgba(255,209,102,1)', borderWidth:1 }],
-    { indexAxis:'y' });
-
-  // By tipo
-  const byTipo = {};
-  allSections.forEach(({info}) => { byTipo[info.tipo] = (byTipo[info.tipo]||0) + info.indicadores.length; });
-  const tipoLabels = Object.keys(byTipo).sort((a,b)=>byTipo[b]-byTipo[a]);
-  renderChart('chart-tipo', 'doughnut', tipoLabels,
-    [{ data: tipoLabels.map(t=>byTipo[t]), backgroundColor:['rgba(0,212,255,0.7)','rgba(0,229,160,0.7)','rgba(255,209,102,0.7)','rgba(255,77,109,0.7)','rgba(148,163,184,0.7)'], borderWidth:0 }]);
-
-  // Ajuste pie
-  renderChart('chart-ajuste', 'doughnut', ['Con Ajuste','Sin Ajuste'],
-    [{ data:[totalDesc, totalInd-totalDesc], backgroundColor:['rgba(255,209,102,0.8)','rgba(0,229,160,0.7)'], borderWidth:0 }]);
-
-  // By trimestre
-  const byTrim = {};
-  allSections.forEach(({info}) => { byTrim[info.trimestre] = (byTrim[info.trimestre]||0) + info.indicadores.length; });
-  const trimLabels = Object.keys(byTrim).sort();
-  renderChart('chart-trim', 'bar', trimLabels,
-    [{ label:'Indicadores', data: trimLabels.map(t=>byTrim[t]), backgroundColor:'rgba(0,229,160,0.6)', borderColor:'rgba(0,229,160,1)', borderWidth:1 }]);
-
-  // Ranking
-  const byPrest = {};
-  const byPrestTotal = {};
-  allSections.forEach(({prestador,info}) => {
-    byPrest[prestador] = (byPrest[prestador]||0) + info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
-    byPrestTotal[prestador] = (byPrestTotal[prestador]||0) + info.indicadores.length;
+  critAll.forEach(({info})=>{
+    const d=info.dept;
+    byDeptCrit[d]=(byDeptCrit[d]||0)+info.criterios.length;
+    byDeptNC[d]=(byDeptNC[d]||0)+info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length;
   });
-  const sorted = Object.entries(byPrest).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const maxDesc = sorted[0]?.[1] || 1;
+  const deptLabels=[...new Set([...Object.keys(byDeptInd),...Object.keys(byDeptCrit)])].sort((a,b)=>(byDeptInd[b]||0)-(byDeptInd[a]||0)).slice(0,10);
+  renderChart('chart-dept','bar',deptLabels,[
+    {label:'Indicadores con ajuste',data:deptLabels.map(d=>byDeptDesc[d]||0),backgroundColor:'rgba(255,209,102,0.75)',borderColor:'rgba(255,209,102,1)',borderWidth:1},
+    {label:'Criterios no cumplen',data:deptLabels.map(d=>byDeptNC[d]||0),backgroundColor:'rgba(255,77,109,0.7)',borderColor:'rgba(255,77,109,1)',borderWidth:1}
+  ],{indexAxis:'y'});
 
-  document.getElementById('ranking-table').innerHTML = `
-    <table class="rank-table">
-      <thead><tr><th>#</th><th>Prestador</th><th>Total Ind.</th><th>Con Ajuste</th><th>% Ajuste</th><th>Distribución</th></tr></thead>
-      <tbody>
-        ${sorted.map(([prest,desc],i) => {
-          const total = byPrestTotal[prest];
-          const pct = Math.round(desc/total*100);
-          const barW = Math.round(desc/maxDesc*120);
-          const sinAjW = Math.round((total-desc)/maxDesc*120);
-          return `<tr>
-            <td><span class="rank-num">${i+1}</span></td>
-            <td style="max-width:200px;font-size:11px">${prest}</td>
-            <td style="text-align:center">${total}</td>
-            <td style="text-align:center;color:var(--yellow);font-weight:700">${desc}</td>
-            <td style="text-align:center;color:${pct>50?'var(--red)':pct>25?'var(--yellow)':'var(--green)'};font-weight:700">${pct}%</td>
-            <td><div class="rank-bar-wrap">
-              <div class="rank-bar" style="width:${barW}px"></div>
-              <div class="rank-bar green" style="width:${sinAjW}px"></div>
-            </div></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+  // ── Chart: distribución indicadores ──
+  renderChart('chart-ajuste','doughnut',['Con Ajuste','Sin Ajuste'],[
+    {data:[totalDesc,totalInd-totalDesc],backgroundColor:['rgba(255,209,102,0.85)','rgba(0,212,255,0.6)'],borderWidth:0}
+  ]);
+
+  // ── Chart: distribución criterios ──
+  renderChart('chart-tipo','doughnut',['Cumple','No Cumple','No Aplica'],[
+    {data:[totalCumple,totalNoCumple,totalCrit-totalCumple-totalNoCumple],
+     backgroundColor:['rgba(0,229,160,0.8)','rgba(255,77,109,0.8)','rgba(100,116,139,0.5)'],borderWidth:0}
+  ]);
+
+  // ── Chart: por trimestre ──
+  const byTrimInd={}, byTrimNC={};
+  indAll.forEach(({info})=>{ byTrimInd[info.trimestre]=(byTrimInd[info.trimestre]||0)+info.indicadores.length; });
+  critAll.forEach(({info})=>{ byTrimNC[info.trimestre]=(byTrimNC[info.trimestre]||0)+info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length; });
+  const trimLabels=[...new Set([...Object.keys(byTrimInd),...Object.keys(byTrimNC)])].sort();
+  renderChart('chart-trim','bar',trimLabels,[
+    {label:'Indicadores',data:trimLabels.map(t=>byTrimInd[t]||0),backgroundColor:'rgba(0,212,255,0.6)',borderColor:'rgba(0,212,255,1)',borderWidth:1},
+    {label:'Criterios no cumplen',data:trimLabels.map(t=>byTrimNC[t]||0),backgroundColor:'rgba(255,77,109,0.65)',borderColor:'rgba(255,77,109,1)',borderWidth:1}
+  ]);
+
+  // ── Ranking unificado ──
+  const byPrest={};
+  indAll.forEach(({prestador,info})=>{
+    if(!byPrest[prestador]) byPrest[prestador]={indTotal:0,indDesc:0,critTotal:0,critNC:0,pcts:[]};
+    byPrest[prestador].indTotal+=info.indicadores.length;
+    byPrest[prestador].indDesc+=info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
+  });
+  critAll.forEach(({prestador,info})=>{
+    if(!byPrest[prestador]) byPrest[prestador]={indTotal:0,indDesc:0,critTotal:0,critNC:0,pcts:[]};
+    byPrest[prestador].critTotal+=info.criterios.length;
+    byPrest[prestador].critNC+=info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length;
+    if(info.pct_cumplimiento!==null&&info.pct_cumplimiento!==undefined) byPrest[prestador].pcts.push(info.pct_cumplimiento);
+  });
+  const ranked=Object.entries(byPrest).sort((a,b)=>{
+    const aAvg=a[1].pcts.length?a[1].pcts.reduce((s,v)=>s+v,0)/a[1].pcts.length:0;
+    const bAvg=b[1].pcts.length?b[1].pcts.reduce((s,v)=>s+v,0)/b[1].pcts.length:0;
+    return bAvg-aAvg;
+  }).slice(0,20);
+
+  document.getElementById('ranking-table').innerHTML =
+    '<table class="rank-table"><thead><tr>' +
+    '<th>#</th><th>Prestador</th><th style="text-align:center">Ind.</th><th style="text-align:center;color:var(--yellow)">Con ajuste</th>' +
+    '<th style="text-align:center">Criterios</th><th style="text-align:center;color:var(--red)">No cumple</th><th style="text-align:center;color:var(--green)">% Cumpl.</th>' +
+    '</tr></thead><tbody>' +
+    ranked.map(([prest,d],i)=>{
+      const avg=d.pcts.length?d.pcts.reduce((s,v)=>s+v,0)/d.pcts.length:null;
+      const avgN=avg!==null?Math.round(avg*(avg<=1?100:1)):null;
+      const pctColor=avgN===null?'var(--text-muted)':avgN>=80?'var(--green)':avgN>=60?'var(--yellow)':'var(--red)';
+      const pctBg=avgN===null?'rgba(100,116,139,0.15)':avgN>=80?'rgba(0,229,160,0.15)':avgN>=60?'rgba(255,209,102,0.15)':'rgba(255,77,109,0.15)';
+      return '<tr>'+
+        '<td><span class="rank-num">'+(i+1)+'</span></td>'+
+        '<td style="max-width:180px;font-size:11px">'+prest+'</td>'+
+        '<td style="text-align:center">'+d.indTotal+'</td>'+
+        '<td style="text-align:center;color:var(--yellow);font-weight:700">'+d.indDesc+'</td>'+
+        '<td style="text-align:center">'+d.critTotal+'</td>'+
+        '<td style="text-align:center;color:var(--red);font-weight:700">'+d.critNC+'</td>'+
+        '<td style="text-align:center"><span style="background:'+pctBg+';color:'+pctColor+';padding:2px 8px;border-radius:12px;font-weight:700;font-family:var(--mono)">'+
+        (avgN!==null?avgN+'%':'—')+'</span></td>'+
+      '</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+function kpiCard(val,label,sub,color) {
+  return '<div class="kpi"><div class="kv" style="color:'+color+'">'+val+'</div><div class="kl">'+label+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>';
+}
+function kpiCard2(val,label,color,sub) {
+  return '<div class="kpi" style="border-left:3px solid '+color+';padding-left:13px"><div class="kv" style="color:'+color+';font-size:22px">'+val+'</div><div class="kl">'+label+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>';
 }
 
 function renderChart(id, type, labels, datasets, extraOpts={}) {
