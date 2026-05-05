@@ -291,13 +291,17 @@
 
 <!-- APP -->
 <div id="app">
+  <!-- TABS BAR -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('indicadores')">📋 Indicadores</button>
     <button class="tab-btn" onclick="switchTab('criterios')">✅ Criterios</button>
     <button class="tab-btn" onclick="switchTab('resumen')">📊 Resumen Ejecutivo</button>
   </div>
-  <div class="main">
-    <!-- SIDEBAR -->
+
+  <!-- TAB: INDICADORES (sidebar + content) -->
+  <div class="tab-content active" id="tab-indicadores">
+    <div class="main">
+      <!-- SIDEBAR -->
     <aside class="sidebar">
       <div>
         <span class="flabel">🔍 Buscar prestador</span>
@@ -340,21 +344,18 @@
       </button>
       <div class="last-update" id="last-update"></div>
     </aside>
+      <main class="content" id="content">
+        <div class="empty-state">
+          <div class="ei">🔍</div>
+          <h3>Selecciona un prestador o contrato</h3>
+          <p>Usa los filtros del panel izquierdo para explorar los indicadores.</p>
+        </div>
+      </main>
+    </div>
+  </div>
 
-    <!-- CONTENT TABS -->
-    <div style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
-      <!-- TAB: INDICADORES -->
-      <div class="tab-content active" id="tab-indicadores">
-        <main class="content" id="content">
-          <div class="empty-state">
-            <div class="ei">🔍</div>
-            <h3>Selecciona un prestador o contrato</h3>
-            <p>Usa los filtros del panel izquierdo para explorar los indicadores.</p>
-          </div>
-        </main>
-      </div>
-      <!-- TAB: CRITERIOS -->
-      <div class="tab-content" id="tab-criterios">
+  <!-- TAB: CRITERIOS (own sidebar + content) -->
+  <div class="tab-content" id="tab-criterios">
         <div class="main">
           <aside class="sidebar">
             <div><span class="flabel">🔍 Buscar prestador</span><div class="search-wrap"><span class="si">🔎</span><input type="text" id="cr-search-p" placeholder="Nombre del prestador..." oninput="crFilterPrestadores()"></div></div>
@@ -385,8 +386,8 @@
         </div>
       </div>
 
-      <!-- TAB: RESUMEN EJECUTIVO -->
-      <div class="tab-content" id="tab-resumen">
+  <!-- TAB: RESUMEN EJECUTIVO -->
+  <div class="tab-content" id="tab-resumen">
         <div class="dashboard" id="dashboard">
           <!-- FILTROS SUPERIORES -->
           <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:10;">
@@ -446,8 +447,7 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+
 </div>
 
 <script>
