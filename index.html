@@ -439,10 +439,15 @@
                 <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
               </div>
             </div>
-            <!-- Ranking -->
+            <!-- Ranking 1: Indicadores -->
             <div class="chart-card full">
-              <h3>Ranking Unificado por Prestador</h3>
-              <div id="ranking-table"></div>
+              <h3>🏆 Top Prestadores — Indicadores con Ajuste / Descuento</h3>
+              <div id="ranking-indicadores"></div>
+            </div>
+            <!-- Ranking 2: Criterios -->
+            <div class="chart-card full" style="margin-top:12px">
+              <h3>🚨 Top Prestadores — Criterios que No Cumplen</h3>
+              <div id="ranking-criterios"></div>
             </div>
           </div>
         </div>
@@ -1494,46 +1499,90 @@ function renderDashboard() {
     {label:'Criterios no cumplen',data:trimLabels.map(t=>byTrimNC[t]||0),backgroundColor:'rgba(255,77,109,0.65)',borderColor:'rgba(255,77,109,1)',borderWidth:1}
   ]);
 
-  // ── Ranking unificado ──
-  const byPrest={};
-  indAll.forEach(({prestador,info})=>{
-    if(!byPrest[prestador]) byPrest[prestador]={indTotal:0,indDesc:0,critTotal:0,critNC:0,pcts:[]};
-    byPrest[prestador].indTotal+=info.indicadores.length;
-    byPrest[prestador].indDesc+=info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
+  // ── Ranking 1: Top indicadores con ajuste ──
+  const byPrestInd = {};
+  indAll.forEach(({prestador, info}) => {
+    if (!byPrestInd[prestador]) byPrestInd[prestador] = {total:0, desc:0};
+    byPrestInd[prestador].total += info.indicadores.length;
+    byPrestInd[prestador].desc  += info.indicadores.filter(i => ajClass(i.ajuste)==='desc').length;
   });
-  critAll.forEach(({prestador,info})=>{
-    if(!byPrest[prestador]) byPrest[prestador]={indTotal:0,indDesc:0,critTotal:0,critNC:0,pcts:[]};
-    byPrest[prestador].critTotal+=info.criterios.length;
-    byPrest[prestador].critNC+=info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length;
-    if(info.pct_cumplimiento!==null&&info.pct_cumplimiento!==undefined) byPrest[prestador].pcts.push(info.pct_cumplimiento);
-  });
-  const ranked=Object.entries(byPrest).sort((a,b)=>{
-    const aAvg=a[1].pcts.length?a[1].pcts.reduce((s,v)=>s+v,0)/a[1].pcts.length:0;
-    const bAvg=b[1].pcts.length?b[1].pcts.reduce((s,v)=>s+v,0)/b[1].pcts.length:0;
-    return bAvg-aAvg;
-  }).slice(0,20);
+  const rankedInd = Object.entries(byPrestInd)
+    .filter(([,d]) => d.desc > 0)
+    .sort((a,b) => b[1].desc - a[1].desc).slice(0,15);
+  const maxDesc = rankedInd[0]?.[1].desc || 1;
 
-  document.getElementById('ranking-table').innerHTML =
-    '<table class="rank-table"><thead><tr>' +
-    '<th>#</th><th>Prestador</th><th style="text-align:center">Ind.</th><th style="text-align:center;color:var(--yellow)">Con ajuste</th>' +
-    '<th style="text-align:center">Criterios</th><th style="text-align:center;color:var(--red)">No cumple</th><th style="text-align:center;color:var(--green)">% Cumpl.</th>' +
-    '</tr></thead><tbody>' +
-    ranked.map(([prest,d],i)=>{
-      const avg=d.pcts.length?d.pcts.reduce((s,v)=>s+v,0)/d.pcts.length:null;
-      const avgN=avg!==null?Math.round(avg*(avg<=1?100:1)):null;
-      const pctColor=avgN===null?'var(--text-muted)':avgN>=80?'var(--green)':avgN>=60?'var(--yellow)':'var(--red)';
-      const pctBg=avgN===null?'rgba(100,116,139,0.15)':avgN>=80?'rgba(0,229,160,0.15)':avgN>=60?'rgba(255,209,102,0.15)':'rgba(255,77,109,0.15)';
+  document.getElementById('ranking-indicadores').innerHTML =
+    '<table class="rank-table"><thead><tr>'+
+    '<th>#</th><th>Prestador</th>'+
+    '<th style="text-align:center">Total ind.</th>'+
+    '<th style="text-align:center;color:var(--yellow)">Con ajuste</th>'+
+    '<th style="text-align:center;color:var(--yellow)">% Ajuste</th>'+
+    '<th>Distribucion</th>'+
+    '</tr></thead><tbody>'+
+    (rankedInd.length ? rankedInd.map(([prest,d],i) => {
+      const pct = Math.round(d.desc/d.total*100);
+      const pctColor = pct>50?'var(--red)':pct>25?'var(--yellow)':'var(--green)';
+      const bD = Math.round(d.desc/maxDesc*100);
+      const bR = Math.round((d.total-d.desc)/maxDesc*100);
       return '<tr>'+
         '<td><span class="rank-num">'+(i+1)+'</span></td>'+
-        '<td style="max-width:180px;font-size:11px">'+prest+'</td>'+
-        '<td style="text-align:center">'+d.indTotal+'</td>'+
-        '<td style="text-align:center;color:var(--yellow);font-weight:700">'+d.indDesc+'</td>'+
-        '<td style="text-align:center">'+d.critTotal+'</td>'+
-        '<td style="text-align:center;color:var(--red);font-weight:700">'+d.critNC+'</td>'+
-        '<td style="text-align:center"><span style="background:'+pctBg+';color:'+pctColor+';padding:2px 8px;border-radius:12px;font-weight:700;font-family:var(--mono)">'+
-        (avgN!==null?avgN+'%':'—')+'</span></td>'+
-      '</tr>';
-    }).join('') +
+        '<td style="font-size:11px;max-width:200px">'+prest+'</td>'+
+        '<td style="text-align:center">'+d.total+'</td>'+
+        '<td style="text-align:center;color:var(--yellow);font-weight:700">'+d.desc+'</td>'+
+        '<td style="text-align:center;color:'+pctColor+';font-weight:700">'+pct+'%</td>'+
+        '<td><div class="rank-bar-wrap">'+
+          '<div class="rank-bar" style="width:'+bD+'px"></div>'+
+          '<div class="rank-bar green" style="width:'+bR+'px"></div>'+
+        '</div></td></tr>';
+    }).join('') :
+    '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Sin indicadores con ajuste para los filtros seleccionados</td></tr>')+
+    '</tbody></table>';
+
+  // ── Ranking 2: Top criterios que no cumplen ──
+  const byPrestCrit = {};
+  critAll.forEach(({prestador, info}) => {
+    if (!byPrestCrit[prestador]) byPrestCrit[prestador] = {total:0, nc:0, mayor:0, pcts:[]};
+    byPrestCrit[prestador].total += info.criterios.length;
+    byPrestCrit[prestador].nc   += info.criterios.filter(c => c.calificacion==='NO CUMPLE').length;
+    byPrestCrit[prestador].mayor+= info.criterios.filter(c => c.calificacion==='NO CUMPLE' && c.impacto==='MAYOR').length;
+    if (info.pct_cumplimiento!==null && info.pct_cumplimiento!==undefined)
+      byPrestCrit[prestador].pcts.push(info.pct_cumplimiento);
+  });
+  const rankedCrit = Object.entries(byPrestCrit)
+    .filter(([,d]) => d.nc > 0)
+    .sort((a,b) => b[1].nc - a[1].nc).slice(0,15);
+  const maxNC = rankedCrit[0]?.[1].nc || 1;
+
+  document.getElementById('ranking-criterios').innerHTML =
+    '<table class="rank-table"><thead><tr>'+
+    '<th>#</th><th>Prestador</th>'+
+    '<th style="text-align:center">Total crit.</th>'+
+    '<th style="text-align:center;color:var(--red)">No cumple</th>'+
+    '<th style="text-align:center;color:var(--red)">Imp. Mayor</th>'+
+    '<th style="text-align:center;color:var(--green)">% Cumpl.</th>'+
+    '<th>Distribucion</th>'+
+    '</tr></thead><tbody>'+
+    (rankedCrit.length ? rankedCrit.map(([prest,d],i) => {
+      const avg = d.pcts.length ? d.pcts.reduce((s,v)=>s+v,0)/d.pcts.length : null;
+      const avgN = avg!==null ? Math.round(avg*(avg<=1?100:1)) : null;
+      const pC = avgN===null?'var(--text-muted)':avgN>=80?'var(--green)':avgN>=60?'var(--yellow)':'var(--red)';
+      const pB = avgN===null?'rgba(100,116,139,0.15)':avgN>=80?'rgba(0,229,160,0.15)':avgN>=60?'rgba(255,209,102,0.15)':'rgba(255,77,109,0.15)';
+      const bNC = Math.round(d.nc/maxNC*100);
+      const bR  = Math.round((d.total-d.nc)/maxNC*100);
+      return '<tr>'+
+        '<td><span class="rank-num">'+(i+1)+'</span></td>'+
+        '<td style="font-size:11px;max-width:200px">'+prest+'</td>'+
+        '<td style="text-align:center">'+d.total+'</td>'+
+        '<td style="text-align:center;color:var(--red);font-weight:700">'+d.nc+'</td>'+
+        '<td style="text-align:center;color:var(--red);font-weight:700">'+d.mayor+'</td>'+
+        '<td style="text-align:center"><span style="background:'+pB+';color:'+pC+';padding:2px 8px;border-radius:12px;font-weight:700">'+
+          (avgN!==null?avgN+'%':'—')+'</span></td>'+
+        '<td><div class="rank-bar-wrap">'+
+          '<div class="rank-bar" style="width:'+bNC+'px;background:var(--red)"></div>'+
+          '<div class="rank-bar green" style="width:'+bR+'px"></div>'+
+        '</div></td></tr>';
+    }).join('') :
+    '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Sin criterios que no cumplen para los filtros seleccionados</td></tr>')+
     '</tbody></table>';
 }
 
