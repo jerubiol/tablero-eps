@@ -295,7 +295,8 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('indicadores')">📋 Indicadores</button>
     <button class="tab-btn" onclick="switchTab('criterios')">✅ Criterios</button>
-    <button class="tab-btn" onclick="switchTab('resumen')">📊 Resumen Ejecutivo</button>
+    <button class="tab-btn" onclick="switchTab('resumen-ind')">📊 Resumen Indicadores</button>
+    <button class="tab-btn" onclick="switchTab('resumen-crit')">📊 Resumen Criterios</button>
   </div>
 
   <!-- TAB: INDICADORES (sidebar + content) -->
@@ -386,74 +387,80 @@
         </div>
       </div>
 
-  <!-- TAB: RESUMEN EJECUTIVO -->
-  <div class="tab-content" id="tab-resumen">
-        <div class="dashboard" id="dashboard">
-          <!-- FILTROS SUPERIORES -->
-          <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:10;">
-            <span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);white-space:nowrap;font-weight:600;">Filtros</span>
-            <div style="position:relative;flex:1;min-width:160px;max-width:220px;">
-              <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;">🔎</span>
-              <input type="text" id="dash-search-p" placeholder="Buscar prestador..." oninput="dashFilterSearch()"
-                style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px 8px 30px;border-radius:7px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;">
-            </div>
-            <select id="dash-sel-p" onchange="dashOnPrestadorChange()" style="flex:1;min-width:160px;max-width:220px"><option value="">— Prestador —</option></select>
-            <select id="dash-sel-c" onchange="updateDashCascade('c');renderDashboard()" style="flex:1;min-width:120px;max-width:160px"><option value="">— Contrato —</option></select>
-            <select id="dash-sel-d" onchange="updateDashCascade('dept');renderDashboard()" style="flex:1;min-width:120px;max-width:160px"><option value="">— Departamento —</option></select>
-            <select id="dash-sel-tr" onchange="updateDashCascade('tr');renderDashboard()" style="flex:1;min-width:130px;max-width:180px"><option value="">— Trimestre —</option></select>
-            <select id="dash-sel-t" onchange="updateDashCascade('tipo');renderDashboard()" style="flex:1;min-width:120px;max-width:160px"><option value="">— Tipo contrato —</option></select>
-            <button class="export-btn" onclick="exportPDF()">🖨️ PDF</button>
-            <button class="export-btn" onclick="dashResetFilters()" style="color:var(--text-muted);border-color:var(--border);">↺ Limpiar</button>
-          </div>
-
-          <div class="dashboard" id="dashboard">
-            <div class="dash-header">
-              <div>
-                <div class="dash-title">Resumen Ejecutivo Unificado</div>
-                <div class="dash-sub" id="dash-sub">Indicadores + Criterios · Todos los prestadores</div>
-              </div>
-            </div>
-            <!-- KPI fila 1 -->
-            <div class="kpi-grid" id="kpi-grid" style="grid-template-columns:repeat(4,1fr)"></div>
-            <!-- KPI fila 2 -->
-            <div class="kpi-grid" id="kpi-grid2" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px"></div>
-            <!-- Charts fila 1 -->
-            <div class="dash-grid">
-              <div class="chart-card">
-                <h3>Alertas por Departamento</h3>
-                <div class="chart-wrap tall"><canvas id="chart-dept"></canvas></div>
-              </div>
-              <div class="chart-card">
-                <h3>Por Trimestre Evaluado</h3>
-                <div class="chart-wrap tall"><canvas id="chart-trim"></canvas></div>
-              </div>
-            </div>
-            <!-- Charts fila 2 -->
-            <div class="dash-grid">
-              <div class="chart-card">
-                <h3>Distribución Indicadores</h3>
-                <div class="chart-wrap"><canvas id="chart-ajuste"></canvas></div>
-              </div>
-              <div class="chart-card">
-                <h3>Distribución Criterios</h3>
-                <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
-              </div>
-            </div>
-            <!-- Ranking 1: Indicadores -->
-            <div class="chart-card full">
-              <h3>🏆 Top Prestadores — Indicadores con Ajuste / Descuento</h3>
-              <div id="ranking-indicadores"></div>
-            </div>
-            <!-- Ranking 2: Criterios -->
-            <div class="chart-card full" style="margin-top:12px">
-              <h3>🚨 Top Prestadores — Criterios que No Cumplen</h3>
-              <div id="ranking-criterios"></div>
-            </div>
-          </div>
-        </div>
+  <!-- TAB: RESUMEN INDICADORES -->
+  <div class="tab-content" id="tab-resumen-ind">
+    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:10;">
+      <span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);white-space:nowrap;font-weight:600;">Filtros</span>
+      <div style="position:relative;flex:1;min-width:150px;max-width:200px;">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;">🔎</span>
+        <input type="text" id="ri-search-p" placeholder="Buscar prestador..." oninput="riFilterSearch()"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px 8px 30px;border-radius:7px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;">
       </div>
+      <select id="ri-sel-p" onchange="riOnChange('p')" style="flex:1;min-width:150px;max-width:200px"><option value="">— Prestador —</option></select>
+      <select id="ri-sel-c" onchange="riOnChange('c')" style="flex:1;min-width:110px;max-width:150px"><option value="">— Contrato —</option></select>
+      <select id="ri-sel-d" onchange="riOnChange('dept')" style="flex:1;min-width:110px;max-width:150px"><option value="">— Departamento —</option></select>
+      <select id="ri-sel-tr" onchange="riOnChange('tr')" style="flex:1;min-width:130px;max-width:170px"><option value="">— Trimestre —</option></select>
+      <select id="ri-sel-t" onchange="riOnChange('tipo')" style="flex:1;min-width:110px;max-width:150px"><option value="">— Tipo contrato —</option></select>
+      <button class="export-btn" onclick="window.print()">🖨️ PDF</button>
+      <button class="export-btn" onclick="riResetFilters()" style="color:var(--text-muted);border-color:var(--border);">↺</button>
+    </div>
+    <div class="dashboard">
+      <div class="dash-header">
+        <div><div class="dash-title">Resumen Ejecutivo — Indicadores</div><div class="dash-sub" id="ri-sub">Todos los prestadores</div></div>
+      </div>
+      <div class="kpi-grid" id="ri-kpi" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="dash-grid">
+        <div class="chart-card"><h3>Indicadores por Departamento</h3><div class="chart-wrap tall"><canvas id="ri-chart-dept"></canvas></div></div>
+        <div class="chart-card"><h3>Por Trimestre Evaluado</h3><div class="chart-wrap tall"><canvas id="ri-chart-trim"></canvas></div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="chart-card"><h3>Con Ajuste vs Sin Ajuste</h3><div class="chart-wrap"><canvas id="ri-chart-ajuste"></canvas></div></div>
+        <div class="chart-card"><h3>Por Tipo de Contrato</h3><div class="chart-wrap"><canvas id="ri-chart-tipo"></canvas></div></div>
+      </div>
+      <div class="chart-card full">
+        <h3>🏆 Ranking — Prestadores con más Indicadores con Ajuste</h3>
+        <div id="ri-ranking"></div>
+      </div>
+    </div>
+  </div>
 
-</div>
+  <!-- TAB: RESUMEN CRITERIOS -->
+  <div class="tab-content" id="tab-resumen-crit">
+    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:10;">
+      <span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);white-space:nowrap;font-weight:600;">Filtros</span>
+      <div style="position:relative;flex:1;min-width:150px;max-width:200px;">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;">🔎</span>
+        <input type="text" id="rc-search-p" placeholder="Buscar prestador..." oninput="rcFilterSearch()"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px 8px 30px;border-radius:7px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;">
+      </div>
+      <select id="rc-sel-p" onchange="rcOnChange('p')" style="flex:1;min-width:150px;max-width:200px"><option value="">— Prestador —</option></select>
+      <select id="rc-sel-c" onchange="rcOnChange('c')" style="flex:1;min-width:110px;max-width:150px"><option value="">— Contrato —</option></select>
+      <select id="rc-sel-d" onchange="rcOnChange('dept')" style="flex:1;min-width:110px;max-width:150px"><option value="">— Departamento —</option></select>
+      <select id="rc-sel-tr" onchange="rcOnChange('tr')" style="flex:1;min-width:130px;max-width:170px"><option value="">— Trimestre —</option></select>
+      <select id="rc-sel-t" onchange="rcOnChange('tipo')" style="flex:1;min-width:110px;max-width:150px"><option value="">— Tipo contrato —</option></select>
+      <button class="export-btn" onclick="window.print()">🖨️ PDF</button>
+      <button class="export-btn" onclick="rcResetFilters()" style="color:var(--text-muted);border-color:var(--border);">↺</button>
+    </div>
+    <div class="dashboard">
+      <div class="dash-header">
+        <div><div class="dash-title">Resumen Ejecutivo — Criterios</div><div class="dash-sub" id="rc-sub">Todos los prestadores</div></div>
+      </div>
+      <div class="kpi-grid" id="rc-kpi" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="dash-grid">
+        <div class="chart-card"><h3>Criterios por Departamento</h3><div class="chart-wrap tall"><canvas id="rc-chart-dept"></canvas></div></div>
+        <div class="chart-card"><h3>Por Trimestre Evaluado</h3><div class="chart-wrap tall"><canvas id="rc-chart-trim"></canvas></div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="chart-card"><h3>Cumple / No Cumple / No Aplica</h3><div class="chart-wrap"><canvas id="rc-chart-cal"></canvas></div></div>
+        <div class="chart-card"><h3>Criterios No Cumplen por Impacto</h3><div class="chart-wrap"><canvas id="rc-chart-imp"></canvas></div></div>
+      </div>
+      <div class="chart-card full">
+        <h3>🚨 Ranking — Prestadores con más Criterios que No Cumplen</h3>
+        <div id="rc-ranking"></div>
+      </div>
+    </div>
+  </div>
+
 
 <script>
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
@@ -976,6 +983,7 @@ async function loadCriteriosData(isSync = false) {
     if (isSync) {
       showToast('✅ Criterios actualizados desde Google Sheets', 'success');
       crRenderContent();
+      if (activeTab === 'resumen-crit') rcRender();
     }
   } catch(err) {
     contentEl.innerHTML = '<div class="empty-state"><div class="ei">⚠️</div><h3>Error al cargar criterios</h3><p>' + err.message + '</p></div>';
@@ -1252,367 +1260,386 @@ let charts = {};
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    b.classList.toggle('active',(i===0&&tab==='indicadores')||(i===1&&tab==='criterios')||(i===2&&tab==='resumen'));
+    b.classList.toggle('active',
+      (i===0&&tab==='indicadores')||(i===1&&tab==='criterios')||
+      (i===2&&tab==='resumen-ind')||(i===3&&tab==='resumen-crit'));
   });
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  if (tab === 'resumen') renderDashboard();
   if (tab === 'criterios' && !crInitialized) loadCriteriosData();
+  if (tab === 'resumen-ind') riRender();
+  if (tab === 'resumen-crit') { if (!crInitialized) loadCriteriosData().then(()=>rcRender()); else rcRender(); }
 }
 
-// ─── DASHBOARD UNIFICADO ─────────────────────────────────────────────────────
-// Lista de departamentos válidos de Colombia
-const DEPTS_VALIDOS = new Set(['Amazonas','Antioquia','Arauca','Atlantico','Bogotá D.C.','Bolivar','Boyaca','Caldas','Caqueta','Casanare','Cauca','Cesar','Choco','Cordoba','Cundinamarca','Guainia','Guaviare','Huila','La Guajira','Magdalena','Meta','Nariño','Norte de Santander','Putumayo','Quindio','Risaralda','San Andres','Santander','Sucre','Tolima','Valle del Cauca','Vaupes','Vichada']);
+// ─── HELPERS COMPARTIDOS ──────────────────────────────────────────────────────
+const DEPTS_VALIDOS = new Set(['Amazonas','Antioquia','Arauca','Atlantico','Bogota D.C.','Bolivar','Boyaca','Caldas','Caqueta','Casanare','Cauca','Cesar','Choco','Cordoba','Cundinamarca','Guainia','Guaviare','Huila','La Guajira','Magdalena','Meta','Narino','Norte de Santander','Putumayo','Quindio','Risaralda','San Andres','Santander','Sucre','Tolima','Valle del Cauca','Vaupes','Vichada']);
 
 function isValidDept(d) {
   if (!d || d === '—' || d === 'nan' || d === 'null' || d === 'undefined') return false;
-  // Check if it looks like a real dept (not a number, not too short, not a date)
-  if (/^[\d.]+$/.test(d.trim())) return false;
-  if (d.trim().length < 3) return false;
+  if (/^[\d.]+$/.test(String(d).trim())) return false;
+  if (String(d).trim().length < 3) return false;
   return true;
 }
 
-function getDashFilters() {
+function kpiCard(val,label,sub,color) {
+  return '<div class="kpi"><div class="kv" style="color:'+color+'">'+val+'</div><div class="kl">'+label+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RESUMEN INDICADORES
+// ════════════════════════════════════════════════════════════════════════════
+function riGetAll() {
+  const out = [];
+  for (const [pname, cs] of Object.entries(DATA)) {
+    if (!pname || pname === 'nan') continue;
+    for (const [clave, info] of Object.entries(cs)) {
+      if (!isValidDept(info.dept)) continue;
+      out.push({prestador: pname, cnum: clave.split('|||')[0], info});
+    }
+  }
+  return out;
+}
+
+function riGetFilters() {
   return {
-    p:    document.getElementById('dash-sel-p').value,
-    c:    document.getElementById('dash-sel-c').value,
-    dept: document.getElementById('dash-sel-d').value,
-    tr:   document.getElementById('dash-sel-tr').value,
-    tipo: document.getElementById('dash-sel-t').value
+    p:    document.getElementById('ri-sel-p').value,
+    c:    document.getElementById('ri-sel-c').value,
+    dept: document.getElementById('ri-sel-d').value,
+    tr:   document.getElementById('ri-sel-tr').value,
+    tipo: document.getElementById('ri-sel-t').value
   };
 }
 
-// Obtiene todas las secciones sin filtrar, limpiando datos inválidos
-function getAllSections() {
-  const ind = [], crit = [];
-  for (const [pname, cs] of Object.entries(DATA)) {
-    for (const [clave, info] of Object.entries(cs)) {
-      if (!pname || pname === 'nan') continue;
-      if (!isValidDept(info.dept)) continue;
-      ind.push({prestador:pname, cnum:clave.split('|||')[0], info});
-    }
-  }
-  for (const [pname, cs] of Object.entries(CRITERIOS_DATA)) {
-    for (const [clave, info] of Object.entries(cs)) {
-      if (!pname || pname === 'nan') continue;
-      if (!isValidDept(info.dept)) continue;
-      crit.push({prestador:pname, cnum:clave.split('|||')[0], info});
-    }
-  }
-  return {ind, crit};
-}
-
-function getFilteredSections() {
-  const {p,c,dept,tr,tipo} = getDashFilters();
-  const {ind: allInd, crit: allCrit} = getAllSections();
-  const ind = allInd.filter(x => {
-    if (p && x.prestador !== p) return false;
-    if (c && x.cnum !== c) return false;
-    if (dept && x.info.dept !== dept) return false;
-    if (tr && x.info.trimestre !== tr) return false;
-    if (tipo && x.info.tipo !== tipo) return false;
+function riCascade(except) {
+  const {p,c,dept,tr,tipo} = riGetFilters();
+  const all = riGetAll();
+  function matches(x, skip) {
+    if (skip!=='p'    && p    && x.prestador!==p) return false;
+    if (skip!=='c'    && c    && x.cnum!==c) return false;
+    if (skip!=='dept' && dept && x.info.dept!==dept) return false;
+    if (skip!=='tr'   && tr   && x.info.trimestre!==tr) return false;
+    if (skip!=='tipo' && tipo && x.info.tipo!==tipo) return false;
     return true;
-  });
-  const crit = allCrit.filter(x => {
-    if (p && x.prestador !== p) return false;
-    if (c && x.cnum !== c) return false;
-    if (dept && x.info.dept !== dept) return false;
-    if (tr && x.info.trimestre !== tr) return false;
-    if (tipo && x.info.tipo !== tipo) return false;
-    return true;
-  });
-  return {ind, crit};
-}
-
-// Filtros en cascada: actualiza los selects con valores válidos dado el estado actual
-function updateDashCascade(changedId) {
-  const {p,c,dept,tr,tipo} = getDashFilters();
-
-  // Obtener secciones que coinciden con los filtros EXCEPTO el que se está recalculando
-  function getSectionsExcept(exceptField) {
-    const {ind: allInd, crit: allCrit} = getAllSections();
-    const filter = (x) => {
-      if (exceptField !== 'p'    && p    && x.prestador !== p) return false;
-      if (exceptField !== 'c'    && c    && x.cnum !== c) return false;
-      if (exceptField !== 'dept' && dept && x.info.dept !== dept) return false;
-      if (exceptField !== 'tr'   && tr   && x.info.trimestre !== tr) return false;
-      if (exceptField !== 'tipo' && tipo && x.info.tipo !== tipo) return false;
-      return true;
-    };
-    return [...allInd.filter(filter), ...allCrit.filter(filter)];
   }
-
-  function repopulate(selectId, field, placeholder, exceptField) {
-    const sel = document.getElementById(selectId);
+  function repop(id, field, placeholder, skip) {
+    const sel = document.getElementById(id);
     const cur = sel.value;
     const vals = new Set();
-    getSectionsExcept(exceptField).forEach(x => {
-      const v = field === 'cnum' ? x.cnum :
-                field === 'prestador' ? x.prestador :
-                field === 'dept' ? x.info.dept :
-                field === 'trimestre' ? x.info.trimestre :
-                x.info.tipo;
-      if (v && v !== 'nan' && v !== '—') vals.add(v);
+    all.filter(x=>matches(x,skip)).forEach(x => {
+      const v = field==='cnum'?x.cnum : field==='prestador'?x.prestador : field==='dept'?x.info.dept : field==='trimestre'?x.info.trimestre : x.info.tipo;
+      if (v && v!=='nan' && v!=='—') vals.add(v);
     });
-    sel.innerHTML = '<option value="">' + placeholder + '</option>';
+    sel.innerHTML = '<option value="">'+placeholder+'</option>';
     [...vals].sort().forEach(v => {
-      const o = document.createElement('option');
-      o.value = v; o.textContent = v;
-      if (v === cur) o.selected = true;
+      const o = document.createElement('option'); o.value=v; o.textContent=v;
+      if (v===cur) o.selected = true;
       sel.appendChild(o);
     });
   }
-
-  repopulate('dash-sel-p',  'prestador', '— Prestador —',    'p');
-  repopulate('dash-sel-c',  'cnum',      '— Contrato —',     'c');
-  repopulate('dash-sel-d',  'dept',      '— Departamento —', 'dept');
-  repopulate('dash-sel-tr', 'trimestre', '— Trimestre —',    'tr');
-  repopulate('dash-sel-t',  'tipo',      '— Tipo contrato —','tipo');
-
-  // Aplicar búsqueda de texto al select de prestador
-  const q = document.getElementById('dash-search-p').value.toLowerCase();
+  repop('ri-sel-p','prestador','— Prestador —','p');
+  repop('ri-sel-c','cnum','— Contrato —','c');
+  repop('ri-sel-d','dept','— Departamento —','dept');
+  repop('ri-sel-tr','trimestre','— Trimestre —','tr');
+  repop('ri-sel-t','tipo','— Tipo contrato —','tipo');
+  const q = document.getElementById('ri-search-p').value.toLowerCase();
   if (q) {
-    document.getElementById('dash-sel-p').querySelectorAll('option').forEach(o => {
+    document.getElementById('ri-sel-p').querySelectorAll('option').forEach(o => {
       if (!o.value) return;
       o.style.display = o.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   }
 }
 
-function initDashFilters() {
-  updateDashCascade(null);
+function riFilterSearch() { riCascade(null); }
+function riOnChange(field) { riCascade(field); riRender(); }
+function riResetFilters() {
+  document.getElementById('ri-search-p').value = '';
+  ['ri-sel-p','ri-sel-c','ri-sel-d','ri-sel-tr','ri-sel-t'].forEach(id => document.getElementById(id).value = '');
+  riCascade(null);
+  riRender();
 }
 
-function dashOnPrestadorChange() {
-  updateDashCascade('p');
-  renderDashboard();
-}
-
-function dashFilterSearch() {
-  const q = document.getElementById('dash-search-p').value.toLowerCase();
-  document.getElementById('dash-sel-p').querySelectorAll('option').forEach(o => {
-    if (!o.value) return;
-    o.style.display = o.textContent.toLowerCase().includes(q) ? '' : 'none';
+function riRender() {
+  if (Object.keys(DATA).length === 0) return;
+  riCascade(null);
+  const {p,c,dept,tr,tipo} = riGetFilters();
+  const all = riGetAll();
+  const filtered = all.filter(x => {
+    if (p && x.prestador!==p) return false;
+    if (c && x.cnum!==c) return false;
+    if (dept && x.info.dept!==dept) return false;
+    if (tr && x.info.trimestre!==tr) return false;
+    if (tipo && x.info.tipo!==tipo) return false;
+    return true;
   });
-}
+  const sections = filtered.length ? filtered : all;
 
-function dashResetFilters() {
-  document.getElementById('dash-search-p').value = '';
-  ['dash-sel-p','dash-sel-c','dash-sel-d','dash-sel-tr','dash-sel-t'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  initDashFilters();
-  renderDashboard();
-}
-
-function renderDashboard() {
-  if (Object.keys(DATA).length === 0 && Object.keys(CRITERIOS_DATA).length === 0) return;
-  updateDashCascade(null);
-  const {ind: indSec, crit: critSec} = getFilteredSections();
-
-  // Fallback: show all if no filter applied
-  let indAll = indSec, critAll = critSec;
-  if (!indAll.length && !critAll.length) {
-    const all = getAllSections();
-    indAll = all.ind; critAll = all.crit;
-  }
-  if (!indAll.length && !critAll.length) return;
-
-  // ── Compute aggregates ──
-  const totalInd   = indAll.reduce((s,x)=>s+x.info.indicadores.length,0);
-  const totalDesc  = indAll.reduce((s,x)=>s+x.info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length,0);
-  const totalCrit  = critAll.reduce((s,x)=>s+x.info.criterios.length,0);
-  const totalCumple    = critAll.reduce((s,x)=>s+x.info.criterios.filter(c=>c.calificacion==='CUMPLE').length,0);
-  const totalNoCumple  = critAll.reduce((s,x)=>s+x.info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length,0);
-  const totalMayor     = critAll.reduce((s,x)=>s+x.info.criterios.filter(c=>c.impacto==='MAYOR'&&c.calificacion==='NO CUMPLE').length,0);
-  const totalPrest  = new Set([...indAll.map(x=>x.prestador),...critAll.map(x=>x.prestador)]).size;
-  const totalContr  = new Set([...indAll.map(x=>x.cnum),...critAll.map(x=>x.cnum)]).size;
-  const totalDepts  = new Set([...indAll.map(x=>x.info.dept),...critAll.map(x=>x.info.dept)]).size;
+  const totalInd = sections.reduce((s,x)=>s+x.info.indicadores.length,0);
+  const totalDesc = sections.reduce((s,x)=>s+x.info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length,0);
+  const totalPrest = new Set(sections.map(x=>x.prestador)).size;
+  const totalContr = new Set(sections.map(x=>x.cnum)).size;
   const pctDesc = totalInd ? Math.round(totalDesc/totalInd*100) : 0;
-  const pctNoCumple = totalCrit ? Math.round(totalNoCumple/totalCrit*100) : 0;
 
-  // Avg % cumplimiento from criterios
-  const pctVals = critAll.map(x=>x.info.pct_cumplimiento).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
-  const avgPct = pctVals.length ? Math.round(pctVals.reduce((a,b)=>a+b,0)/pctVals.length*(pctVals[0]<=1?100:1)) : null;
-  const avgPctColor = avgPct===null?'var(--text-muted)':avgPct>=80?'var(--green)':avgPct>=60?'var(--yellow)':'var(--red)';
-
-  // ── Subtitle ──
-  const {p,dept,tr} = getDashFilters();
   let sub = [];
   if (p) sub.push(p); else sub.push(totalPrest+' prestadores');
-  if (dept) sub.push(dept); else sub.push(totalDepts+' departamentos');
+  if (dept) sub.push(dept);
   if (tr) sub.push(tr);
-  document.getElementById('dash-sub').textContent = sub.join(' · ');
+  document.getElementById('ri-sub').textContent = sub.join(' · ');
 
-  // ── KPI row 1 ──
-  document.getElementById('kpi-grid').innerHTML =
+  document.getElementById('ri-kpi').innerHTML =
     kpiCard(totalPrest,'Prestadores','','var(--accent)') +
     kpiCard(totalContr,'Contratos','','var(--accent)') +
-    kpiCard(totalDepts,'Departamentos','','var(--accent)') +
-    kpiCard(avgPct!==null?avgPct+'%':'—','% Cumpl. promedio','de criterios',avgPctColor);
+    kpiCard(totalInd,'Indicadores totales','','var(--accent)') +
+    kpiCard(totalDesc,'Con ajuste / descuento',pctDesc+'% del total','var(--yellow)');
 
-  // ── KPI row 2 ──
-  document.getElementById('kpi-grid2').innerHTML =
-    kpiCard2(totalInd,'Indicadores','#378ADD') +
-    kpiCard2(totalDesc,'Con ajuste / descuento','var(--yellow)', totalInd?Math.round(totalDesc/totalInd*100)+'% del total':'') +
-    kpiCard2(totalCrit,'Criterios evaluados','#1D9E75') +
-    kpiCard2(totalNoCumple,'No cumplen criterios','var(--red)', totalCrit?Math.round(totalNoCumple/totalCrit*100)+'% del total':'') +
-    kpiCard2(totalCumple,'Cumplen criterios','var(--green)', totalCrit?Math.round(totalCumple/totalCrit*100)+'% del total':'') +
-    kpiCard2(totalMayor,'Impacto MAYOR','var(--red)','criterios no cumplidos');
-
-  // ── Chart: por departamento (indicadores + criterios no cumplen) ──
-  const byDeptInd={}, byDeptDesc={}, byDeptCrit={}, byDeptNC={};
-  indAll.forEach(({info})=>{
-    const d=info.dept;
-    byDeptInd[d]=(byDeptInd[d]||0)+info.indicadores.length;
-    byDeptDesc[d]=(byDeptDesc[d]||0)+info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
+  // Chart por departamento
+  const byDept={}, byDeptDesc={};
+  sections.forEach(({info})=>{
+    byDept[info.dept]=(byDept[info.dept]||0)+info.indicadores.length;
+    byDeptDesc[info.dept]=(byDeptDesc[info.dept]||0)+info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
   });
-  critAll.forEach(({info})=>{
-    const d=info.dept;
-    byDeptCrit[d]=(byDeptCrit[d]||0)+info.criterios.length;
-    byDeptNC[d]=(byDeptNC[d]||0)+info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length;
-  });
-  const deptLabels=[...new Set([...Object.keys(byDeptInd),...Object.keys(byDeptCrit)])].sort((a,b)=>(byDeptInd[b]||0)-(byDeptInd[a]||0)).slice(0,10);
-  renderChart('chart-dept','bar',deptLabels,[
-    {label:'Indicadores con ajuste',data:deptLabels.map(d=>byDeptDesc[d]||0),backgroundColor:'rgba(255,209,102,0.75)',borderColor:'rgba(255,209,102,1)',borderWidth:1},
-    {label:'Criterios no cumplen',data:deptLabels.map(d=>byDeptNC[d]||0),backgroundColor:'rgba(255,77,109,0.7)',borderColor:'rgba(255,77,109,1)',borderWidth:1}
+  const deptLabels = Object.keys(byDept).sort((a,b)=>byDept[b]-byDept[a]).slice(0,10);
+  renderChart('ri-chart-dept','bar',deptLabels,[
+    {label:'Total',data:deptLabels.map(d=>byDept[d]),backgroundColor:'rgba(0,212,255,0.6)',borderColor:'rgba(0,212,255,1)',borderWidth:1},
+    {label:'Con ajuste',data:deptLabels.map(d=>byDeptDesc[d]||0),backgroundColor:'rgba(255,209,102,0.75)',borderColor:'rgba(255,209,102,1)',borderWidth:1}
   ],{indexAxis:'y'});
 
-  // ── Chart: distribución indicadores ──
-  renderChart('chart-ajuste','doughnut',['Con Ajuste','Sin Ajuste'],[
+  // Chart por trimestre
+  const byTrim={};
+  sections.forEach(({info})=>{ byTrim[info.trimestre]=(byTrim[info.trimestre]||0)+info.indicadores.length; });
+  const trimLabels = Object.keys(byTrim).sort();
+  renderChart('ri-chart-trim','bar',trimLabels,[
+    {label:'Indicadores',data:trimLabels.map(t=>byTrim[t]),backgroundColor:'rgba(0,229,160,0.6)',borderColor:'rgba(0,229,160,1)',borderWidth:1}
+  ]);
+
+  // Chart ajuste
+  renderChart('ri-chart-ajuste','doughnut',['Con Ajuste','Sin Ajuste'],[
     {data:[totalDesc,totalInd-totalDesc],backgroundColor:['rgba(255,209,102,0.85)','rgba(0,212,255,0.6)'],borderWidth:0}
   ]);
 
-  // ── Chart: distribución criterios ──
-  renderChart('chart-tipo','doughnut',['Cumple','No Cumple','No Aplica'],[
-    {data:[totalCumple,totalNoCumple,totalCrit-totalCumple-totalNoCumple],
-     backgroundColor:['rgba(0,229,160,0.8)','rgba(255,77,109,0.8)','rgba(100,116,139,0.5)'],borderWidth:0}
+  // Chart tipo
+  const byTipo={};
+  sections.forEach(({info})=>{ byTipo[info.tipo]=(byTipo[info.tipo]||0)+info.indicadores.length; });
+  const tipoLabels = Object.keys(byTipo).sort((a,b)=>byTipo[b]-byTipo[a]);
+  renderChart('ri-chart-tipo','doughnut',tipoLabels,[
+    {data:tipoLabels.map(t=>byTipo[t]),backgroundColor:['rgba(0,212,255,0.7)','rgba(0,229,160,0.7)','rgba(255,209,102,0.7)','rgba(255,77,109,0.7)','rgba(148,163,184,0.7)'],borderWidth:0}
   ]);
 
-  // ── Chart: por trimestre ──
-  const byTrimInd={}, byTrimNC={};
-  indAll.forEach(({info})=>{ byTrimInd[info.trimestre]=(byTrimInd[info.trimestre]||0)+info.indicadores.length; });
-  critAll.forEach(({info})=>{ byTrimNC[info.trimestre]=(byTrimNC[info.trimestre]||0)+info.criterios.filter(c=>c.calificacion==='NO CUMPLE').length; });
-  const trimLabels=[...new Set([...Object.keys(byTrimInd),...Object.keys(byTrimNC)])].sort();
-  renderChart('chart-trim','bar',trimLabels,[
-    {label:'Indicadores',data:trimLabels.map(t=>byTrimInd[t]||0),backgroundColor:'rgba(0,212,255,0.6)',borderColor:'rgba(0,212,255,1)',borderWidth:1},
-    {label:'Criterios no cumplen',data:trimLabels.map(t=>byTrimNC[t]||0),backgroundColor:'rgba(255,77,109,0.65)',borderColor:'rgba(255,77,109,1)',borderWidth:1}
-  ]);
-
-  // ── Ranking 1: Top indicadores con ajuste ──
-  const byPrestInd = {};
-  indAll.forEach(({prestador, info}) => {
-    if (!byPrestInd[prestador]) byPrestInd[prestador] = {total:0, desc:0};
-    byPrestInd[prestador].total += info.indicadores.length;
-    byPrestInd[prestador].desc  += info.indicadores.filter(i => ajClass(i.ajuste)==='desc').length;
+  // Ranking
+  const byPrest={};
+  sections.forEach(({prestador,info})=>{
+    if(!byPrest[prestador]) byPrest[prestador]={total:0,desc:0};
+    byPrest[prestador].total+=info.indicadores.length;
+    byPrest[prestador].desc+=info.indicadores.filter(i=>ajClass(i.ajuste)==='desc').length;
   });
-  const rankedInd = Object.entries(byPrestInd)
-    .filter(([,d]) => d.desc > 0)
-    .sort((a,b) => b[1].desc - a[1].desc).slice(0,15);
-  const maxDesc = rankedInd[0]?.[1].desc || 1;
+  const ranked = Object.entries(byPrest).filter(([,d])=>d.desc>0).sort((a,b)=>b[1].desc-a[1].desc).slice(0,15);
+  const maxDesc = ranked[0]?.[1].desc || 1;
 
-  document.getElementById('ranking-indicadores').innerHTML =
+  document.getElementById('ri-ranking').innerHTML =
     '<table class="rank-table"><thead><tr>'+
-    '<th>#</th><th>Prestador</th>'+
-    '<th style="text-align:center">Total ind.</th>'+
+    '<th>#</th><th>Prestador</th><th style="text-align:center">Total ind.</th>'+
     '<th style="text-align:center;color:var(--yellow)">Con ajuste</th>'+
-    '<th style="text-align:center;color:var(--yellow)">% Ajuste</th>'+
-    '<th>Distribucion</th>'+
+    '<th style="text-align:center;color:var(--yellow)">% Ajuste</th><th>Distribucion</th>'+
     '</tr></thead><tbody>'+
-    (rankedInd.length ? rankedInd.map(([prest,d],i) => {
+    (ranked.length ? ranked.map(([prest,d],i)=>{
       const pct = Math.round(d.desc/d.total*100);
       const pctColor = pct>50?'var(--red)':pct>25?'var(--yellow)':'var(--green)';
       const bD = Math.round(d.desc/maxDesc*100);
       const bR = Math.round((d.total-d.desc)/maxDesc*100);
-      return '<tr>'+
-        '<td><span class="rank-num">'+(i+1)+'</span></td>'+
-        '<td style="font-size:11px;max-width:200px">'+prest+'</td>'+
+      return '<tr><td><span class="rank-num">'+(i+1)+'</span></td>'+
+        '<td style="font-size:11px;max-width:220px">'+prest+'</td>'+
         '<td style="text-align:center">'+d.total+'</td>'+
         '<td style="text-align:center;color:var(--yellow);font-weight:700">'+d.desc+'</td>'+
         '<td style="text-align:center;color:'+pctColor+';font-weight:700">'+pct+'%</td>'+
-        '<td><div class="rank-bar-wrap">'+
-          '<div class="rank-bar" style="width:'+bD+'px"></div>'+
-          '<div class="rank-bar green" style="width:'+bR+'px"></div>'+
-        '</div></td></tr>';
-    }).join('') :
-    '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Sin indicadores con ajuste para los filtros seleccionados</td></tr>')+
+        '<td><div class="rank-bar-wrap"><div class="rank-bar" style="width:'+bD+'px"></div><div class="rank-bar green" style="width:'+bR+'px"></div></div></td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Sin indicadores con ajuste para los filtros seleccionados</td></tr>')+
     '</tbody></table>';
+}
 
-  // ── Ranking 2: Top criterios que no cumplen ──
-  const byPrestCrit = {};
-  critAll.forEach(({prestador, info}) => {
-    if (!byPrestCrit[prestador]) byPrestCrit[prestador] = {total:0, nc:0, mayor:0, pcts:[]};
-    byPrestCrit[prestador].total += info.criterios.length;
-    byPrestCrit[prestador].nc   += info.criterios.filter(c => c.calificacion==='NO CUMPLE').length;
-    byPrestCrit[prestador].mayor+= info.criterios.filter(c => c.calificacion==='NO CUMPLE' && c.impacto==='MAYOR').length;
-    if (info.pct_cumplimiento!==null && info.pct_cumplimiento!==undefined)
-      byPrestCrit[prestador].pcts.push(info.pct_cumplimiento);
+// ════════════════════════════════════════════════════════════════════════════
+// RESUMEN CRITERIOS
+// ════════════════════════════════════════════════════════════════════════════
+function rcGetAll() {
+  const out = [];
+  for (const [pname, cs] of Object.entries(CRITERIOS_DATA)) {
+    if (!pname || pname === 'nan') continue;
+    for (const [clave, info] of Object.entries(cs)) {
+      if (!isValidDept(info.dept)) continue;
+      out.push({prestador: pname, cnum: clave.split('|||')[0], info});
+    }
+  }
+  return out;
+}
+
+function rcGetFilters() {
+  return {
+    p:    document.getElementById('rc-sel-p').value,
+    c:    document.getElementById('rc-sel-c').value,
+    dept: document.getElementById('rc-sel-d').value,
+    tr:   document.getElementById('rc-sel-tr').value,
+    tipo: document.getElementById('rc-sel-t').value
+  };
+}
+
+function rcCascade(except) {
+  const {p,c,dept,tr,tipo} = rcGetFilters();
+  const all = rcGetAll();
+  function matches(x, skip) {
+    if (skip!=='p'    && p    && x.prestador!==p) return false;
+    if (skip!=='c'    && c    && x.cnum!==c) return false;
+    if (skip!=='dept' && dept && x.info.dept!==dept) return false;
+    if (skip!=='tr'   && tr   && x.info.trimestre!==tr) return false;
+    if (skip!=='tipo' && tipo && x.info.tipo!==tipo) return false;
+    return true;
+  }
+  function repop(id, field, placeholder, skip) {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    const vals = new Set();
+    all.filter(x=>matches(x,skip)).forEach(x => {
+      const v = field==='cnum'?x.cnum : field==='prestador'?x.prestador : field==='dept'?x.info.dept : field==='trimestre'?x.info.trimestre : x.info.tipo;
+      if (v && v!=='nan' && v!=='—') vals.add(v);
+    });
+    sel.innerHTML = '<option value="">'+placeholder+'</option>';
+    [...vals].sort().forEach(v => {
+      const o = document.createElement('option'); o.value=v; o.textContent=v;
+      if (v===cur) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  repop('rc-sel-p','prestador','— Prestador —','p');
+  repop('rc-sel-c','cnum','— Contrato —','c');
+  repop('rc-sel-d','dept','— Departamento —','dept');
+  repop('rc-sel-tr','trimestre','— Trimestre —','tr');
+  repop('rc-sel-t','tipo','— Tipo contrato —','tipo');
+  const q = document.getElementById('rc-search-p').value.toLowerCase();
+  if (q) {
+    document.getElementById('rc-sel-p').querySelectorAll('option').forEach(o => {
+      if (!o.value) return;
+      o.style.display = o.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+}
+
+function rcFilterSearch() { rcCascade(null); }
+function rcOnChange(field) { rcCascade(field); rcRender(); }
+function rcResetFilters() {
+  document.getElementById('rc-search-p').value = '';
+  ['rc-sel-p','rc-sel-c','rc-sel-d','rc-sel-tr','rc-sel-t'].forEach(id => document.getElementById(id).value = '');
+  rcCascade(null);
+  rcRender();
+}
+
+function rcRender() {
+  if (Object.keys(CRITERIOS_DATA).length === 0) return;
+  rcCascade(null);
+  const {p,c,dept,tr,tipo} = rcGetFilters();
+  const all = rcGetAll();
+  const filtered = all.filter(x => {
+    if (p && x.prestador!==p) return false;
+    if (c && x.cnum!==c) return false;
+    if (dept && x.info.dept!==dept) return false;
+    if (tr && x.info.trimestre!==tr) return false;
+    if (tipo && x.info.tipo!==tipo) return false;
+    return true;
   });
-  const rankedCrit = Object.entries(byPrestCrit)
-    .filter(([,d]) => d.nc > 0)
-    .sort((a,b) => b[1].nc - a[1].nc).slice(0,15);
-  const maxNC = rankedCrit[0]?.[1].nc || 1;
+  const sections = filtered.length ? filtered : all;
 
-  document.getElementById('ranking-criterios').innerHTML =
+  const totalCrit = sections.reduce((s,x)=>s+x.info.criterios.length,0);
+  const totalCumple = sections.reduce((s,x)=>s+x.info.criterios.filter(cr=>cr.calificacion==='CUMPLE').length,0);
+  const totalNoCumple = sections.reduce((s,x)=>s+x.info.criterios.filter(cr=>cr.calificacion==='NO CUMPLE').length,0);
+  const totalPrest = new Set(sections.map(x=>x.prestador)).size;
+  const totalContr = new Set(sections.map(x=>x.cnum)).size;
+  const pctVals = sections.map(x=>x.info.pct_cumplimiento).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+  const avgPct = pctVals.length ? Math.round(pctVals.reduce((a,b)=>a+b,0)/pctVals.length*(pctVals[0]<=1?100:1)) : null;
+  const avgColor = avgPct===null?'var(--text-muted)':avgPct>=80?'var(--green)':avgPct>=60?'var(--yellow)':'var(--red)';
+
+  let sub = [];
+  if (p) sub.push(p); else sub.push(totalPrest+' prestadores');
+  if (dept) sub.push(dept);
+  if (tr) sub.push(tr);
+  document.getElementById('rc-sub').textContent = sub.join(' · ');
+
+  document.getElementById('rc-kpi').innerHTML =
+    kpiCard(totalPrest,'Prestadores','','var(--accent)') +
+    kpiCard(totalContr,'Contratos','','var(--accent)') +
+    kpiCard(totalNoCumple,'Criterios no cumplen', totalCrit?Math.round(totalNoCumple/totalCrit*100)+'% del total':'', 'var(--red)') +
+    kpiCard(avgPct!==null?avgPct+'%':'—','% Cumpl. promedio','',avgColor);
+
+  // Chart por departamento
+  const byDept={}, byDeptNC={};
+  sections.forEach(({info})=>{
+    byDept[info.dept]=(byDept[info.dept]||0)+info.criterios.length;
+    byDeptNC[info.dept]=(byDeptNC[info.dept]||0)+info.criterios.filter(cr=>cr.calificacion==='NO CUMPLE').length;
+  });
+  const deptLabels = Object.keys(byDept).sort((a,b)=>byDept[b]-byDept[a]).slice(0,10);
+  renderChart('rc-chart-dept','bar',deptLabels,[
+    {label:'Total',data:deptLabels.map(d=>byDept[d]),backgroundColor:'rgba(0,212,255,0.6)',borderColor:'rgba(0,212,255,1)',borderWidth:1},
+    {label:'No cumplen',data:deptLabels.map(d=>byDeptNC[d]||0),backgroundColor:'rgba(255,77,109,0.7)',borderColor:'rgba(255,77,109,1)',borderWidth:1}
+  ],{indexAxis:'y'});
+
+  // Chart por trimestre
+  const byTrim={};
+  sections.forEach(({info})=>{ byTrim[info.trimestre]=(byTrim[info.trimestre]||0)+info.criterios.length; });
+  const trimLabels = Object.keys(byTrim).sort();
+  renderChart('rc-chart-trim','bar',trimLabels,[
+    {label:'Criterios',data:trimLabels.map(t=>byTrim[t]),backgroundColor:'rgba(0,229,160,0.6)',borderColor:'rgba(0,229,160,1)',borderWidth:1}
+  ]);
+
+  // Chart calificacion
+  renderChart('rc-chart-cal','doughnut',['Cumple','No Cumple','No Aplica'],[
+    {data:[totalCumple,totalNoCumple,totalCrit-totalCumple-totalNoCumple],backgroundColor:['rgba(0,229,160,0.8)','rgba(255,77,109,0.8)','rgba(100,116,139,0.5)'],borderWidth:0}
+  ]);
+
+  // Chart impacto (solo no cumple)
+  const byImp={};
+  sections.forEach(({info})=>{
+    info.criterios.filter(cr=>cr.calificacion==='NO CUMPLE').forEach(cr=>{
+      byImp[cr.impacto]=(byImp[cr.impacto]||0)+1;
+    });
+  });
+  const impLabels = Object.keys(byImp);
+  renderChart('rc-chart-imp','doughnut',impLabels,[
+    {data:impLabels.map(i=>byImp[i]),backgroundColor:['rgba(255,77,109,0.8)','rgba(255,209,102,0.8)','rgba(100,116,139,0.5)'],borderWidth:0}
+  ]);
+
+  // Ranking
+  const byPrest={};
+  sections.forEach(({prestador,info})=>{
+    if(!byPrest[prestador]) byPrest[prestador]={total:0,nc:0,mayor:0,pcts:[]};
+    byPrest[prestador].total+=info.criterios.length;
+    byPrest[prestador].nc+=info.criterios.filter(cr=>cr.calificacion==='NO CUMPLE').length;
+    byPrest[prestador].mayor+=info.criterios.filter(cr=>cr.calificacion==='NO CUMPLE'&&cr.impacto==='MAYOR').length;
+    if(info.pct_cumplimiento!==null&&info.pct_cumplimiento!==undefined) byPrest[prestador].pcts.push(info.pct_cumplimiento);
+  });
+  const ranked = Object.entries(byPrest).filter(([,d])=>d.nc>0).sort((a,b)=>b[1].nc-a[1].nc).slice(0,15);
+  const maxNC = ranked[0]?.[1].nc || 1;
+
+  document.getElementById('rc-ranking').innerHTML =
     '<table class="rank-table"><thead><tr>'+
-    '<th>#</th><th>Prestador</th>'+
-    '<th style="text-align:center">Total crit.</th>'+
+    '<th>#</th><th>Prestador</th><th style="text-align:center">Total crit.</th>'+
     '<th style="text-align:center;color:var(--red)">No cumple</th>'+
     '<th style="text-align:center;color:var(--red)">Imp. Mayor</th>'+
-    '<th style="text-align:center;color:var(--green)">% Cumpl.</th>'+
-    '<th>Distribucion</th>'+
+    '<th style="text-align:center;color:var(--green)">% Cumpl.</th><th>Distribucion</th>'+
     '</tr></thead><tbody>'+
-    (rankedCrit.length ? rankedCrit.map(([prest,d],i) => {
+    (ranked.length ? ranked.map(([prest,d],i)=>{
       const avg = d.pcts.length ? d.pcts.reduce((s,v)=>s+v,0)/d.pcts.length : null;
       const avgN = avg!==null ? Math.round(avg*(avg<=1?100:1)) : null;
       const pC = avgN===null?'var(--text-muted)':avgN>=80?'var(--green)':avgN>=60?'var(--yellow)':'var(--red)';
       const pB = avgN===null?'rgba(100,116,139,0.15)':avgN>=80?'rgba(0,229,160,0.15)':avgN>=60?'rgba(255,209,102,0.15)':'rgba(255,77,109,0.15)';
       const bNC = Math.round(d.nc/maxNC*100);
-      const bR  = Math.round((d.total-d.nc)/maxNC*100);
-      return '<tr>'+
-        '<td><span class="rank-num">'+(i+1)+'</span></td>'+
-        '<td style="font-size:11px;max-width:200px">'+prest+'</td>'+
+      const bR = Math.round((d.total-d.nc)/maxNC*100);
+      return '<tr><td><span class="rank-num">'+(i+1)+'</span></td>'+
+        '<td style="font-size:11px;max-width:220px">'+prest+'</td>'+
         '<td style="text-align:center">'+d.total+'</td>'+
         '<td style="text-align:center;color:var(--red);font-weight:700">'+d.nc+'</td>'+
         '<td style="text-align:center;color:var(--red);font-weight:700">'+d.mayor+'</td>'+
-        '<td style="text-align:center"><span style="background:'+pB+';color:'+pC+';padding:2px 8px;border-radius:12px;font-weight:700">'+
-          (avgN!==null?avgN+'%':'—')+'</span></td>'+
-        '<td><div class="rank-bar-wrap">'+
-          '<div class="rank-bar" style="width:'+bNC+'px;background:var(--red)"></div>'+
-          '<div class="rank-bar green" style="width:'+bR+'px"></div>'+
-        '</div></td></tr>';
-    }).join('') :
-    '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Sin criterios que no cumplen para los filtros seleccionados</td></tr>')+
+        '<td style="text-align:center"><span style="background:'+pB+';color:'+pC+';padding:2px 8px;border-radius:12px;font-weight:700">'+(avgN!==null?avgN+'%':'—')+'</span></td>'+
+        '<td><div class="rank-bar-wrap"><div class="rank-bar" style="width:'+bNC+'px;background:var(--red)"></div><div class="rank-bar green" style="width:'+bR+'px"></div></div></td></tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Sin criterios que no cumplen para los filtros seleccionados</td></tr>')+
     '</tbody></table>';
 }
 
-function kpiCard(val,label,sub,color) {
-  return '<div class="kpi"><div class="kv" style="color:'+color+'">'+val+'</div><div class="kl">'+label+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>';
-}
-function kpiCard2(val,label,color,sub) {
-  return '<div class="kpi" style="border-left:3px solid '+color+';padding-left:13px"><div class="kv" style="color:'+color+';font-size:22px">'+val+'</div><div class="kl">'+label+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>';
-}
-
-function renderChart(id, type, labels, datasets, extraOpts={}) {
-  if (charts[id]) { charts[id].destroy(); }
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type,
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
-        tooltip: { backgroundColor: '#1a2233', titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
-      },
-      scales: type === 'bar' ? {
-        x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: 'rgba(30,45,69,0.5)' } },
-        y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: 'rgba(30,45,69,0.5)' } }
-      } : {},
-      ...extraOpts
-    }
-  });
-}
 
 // ─── EXPORT PDF ───────────────────────────────────────────────────────────────
 function exportPDF() {
