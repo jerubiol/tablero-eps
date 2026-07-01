@@ -1255,7 +1255,6 @@ loadData();
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 let activeTab = 'indicadores';
-let charts = {};
 
 function switchTab(tab) {
   activeTab = tab;
@@ -1283,6 +1282,33 @@ function isValidDept(d) {
 
 function kpiCard(val,label,sub,color) {
   return '<div class="kpi"><div class="kv" style="color:'+color+'">'+val+'</div><div class="kl">'+label+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>';
+}
+
+// ─── RENDER CHART (compartido) ────────────────────────────────────────────────
+const charts = {};
+
+function renderChart(id, type, labels, datasets, extraOpts={}) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+        tooltip: { backgroundColor: '#1a2233', titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
+      },
+      scales: type === 'bar' ? {
+        x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: 'rgba(30,45,69,0.5)' } },
+        y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: 'rgba(30,45,69,0.5)' } }
+      } : {},
+      ...extraOpts
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
